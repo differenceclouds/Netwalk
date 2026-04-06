@@ -59,6 +59,8 @@ Game :: struct {
 	tiles: []TileData,
 	camera: rl.Camera2D,
 	game_won: bool,
+
+	//following only used for move counter
 	last_rotated_tile: i32,
 	initial_state_of_last_rotated_tile: Connection,
 	initial_moves: i32,
@@ -79,7 +81,7 @@ TileCoords := [TileType]Coord {
 	.Terminal = {2, 0},
 }
 
-ConnectionCoords := map[Connection]Coord {
+ConnectionTilemapCoords := map[Connection]Coord {
 	{.N} = {0, 1},
 	{.E} = {1, 1},
 	{.S} = {2, 1},
@@ -266,7 +268,7 @@ rotate_tile :: proc(game: ^Game, coord: Coord, step: int) {
 		game.initial_moves = game.moves
 	} else {
 		difference = (i32(new_cardinality) - i32(init_cardinality)) %% 4
-		if difference == 3 do difference = 1
+		if difference == 3 do difference = 1 //ugly but whatever
 	}
 	game.moves = game.initial_moves + difference
 }
@@ -407,7 +409,7 @@ main :: proc() {
 				connection := game.tiles[idx].connection
 				is_networked := game.tiles[idx].networked
 
-				pipe_coord := ConnectionCoords[connection]
+				pipe_coord := ConnectionTilemapCoords[connection]
 				tile_coord := TileCoords[tile_type]
 
 				if is_networked {
