@@ -1,0 +1,48 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+		},
+		{
+			"path": "/Users/Radagast/Odin/core",
+		},
+		{
+			"path": "/Users/Radagast/Odin/vendor"
+		},
+	],
+	"build_systems":
+	[
+		{
+			"name": "odin_run_debug",
+			// "shell_cmd": "odin run . -debug",
+			"shell_cmd": "odin run . -debug",
+			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+		},
+		{
+			"name": "odin_run_keep_debug",
+			"shell_cmd": "odin run . -keep-executable -debug",
+			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+		},
+		{
+			"name": "odin_build_release",
+			"shell_cmd": "odin build .",
+			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+		},
+		{
+			"name": "odin_build_run_win",
+			"cmd": "odin run . -debug",
+			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+		}
+	],
+	"settings":
+	{
+		"LSP":
+		{
+			"odin":
+			{
+				"enabled": true,
+			},
+		},
+	},
+}
