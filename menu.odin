@@ -6,7 +6,7 @@ import "core:math/rand"
 
 
 load_menu_resources :: proc(gui_state: ^GuiState) {
-	rl.GuiLoadStyle("rgui_styles/style_jungle.rgs")
+	rl.GuiLoadStyle("rgui_styles/style_terminal.rgs")
 }
 
 GuiState :: struct {
@@ -38,21 +38,21 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	if rl.GuiButton({x, y, 100, UNIT}, "Beginner") {
 		// make_game(game, GameSize[.Beginner], TEST_PUZZLE_BEGINNER_SOLVED, GamePadded[.Beginner])
 		make_game(game, GameSize[.Beginner], {}, GamePadded[.Beginner])
-		// scramble_puzzle(game)
+		scramble_puzzle(game)
 		new_game_pressed = true
 	}
 	x += 100 + 2
 	if rl.GuiButton({x, y, 100, UNIT}, "Intermediate") {
 		make_game(game, GameSize[.Intermediate], {}, GamePadded[.Intermediate])
 		// make_game(game, GameSize[.Intermediate], test_intermediate_maze_1, GamePadded[.Intermediate])
-		// scramble_puzzle(game)
+		scramble_puzzle(game)
 		new_game_pressed = true
 	}
 	x += 100 + 2
 	if rl.GuiButton({x, y, 100, UNIT}, "Expert") {
 		make_game(game, GameSize[.Expert], {}, GamePadded[.Expert])
 		// make_game(game, GameSize[.Expert], TEST_PUZZLE_EXPERT_SOLVED, GamePadded[.Expert])
-		// scramble_puzzle(game)
+		scramble_puzzle(game)
 		new_game_pressed = true
 	}
 	x += 100 + UNIT

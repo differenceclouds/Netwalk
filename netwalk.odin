@@ -351,10 +351,12 @@ main :: proc() {
 	window: Window
 	gui_state: GuiState
 
-	make_game(&game, GameSize[.Expert], TEST_PUZZLE_EXPERT_SOLVED)
+	// make_game(&game, GameSize[.Expert], TEST_PUZZLE_EXPERT_SOLVED)
+	make_game(&game, GameSize[.Expert], {}, GamePadded[.Expert])
 	scramble_puzzle(&game)
 
 	rl.ChangeDirectory(rl.GetApplicationDirectory())
+	rl.ChangeDirectory("assets")
 	rl.InitWindow(window.width, window.height, window.name)
 	// rl.SetWindowState( window.control_flags )
 	set_window(&window, game)
