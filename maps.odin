@@ -1,4 +1,4 @@
-package main
+package Netwalk
 
 //only for saved map data, probably won't use for generation. 
 PipeData :: enum {

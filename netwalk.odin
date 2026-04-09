@@ -1,5 +1,5 @@
 #+feature dynamic-literals
-package main
+package Netwalk
 
 import "core:fmt"
 import rl "vendor:raylib"
@@ -37,20 +37,22 @@ Rotation :: enum {
 	Right,
 }
 
-// BEGINNER_SIZE :: 7
-// INTERMEDIATE_SIZE :: 9
-// EXPERT_SIZE :: 9
-
 GameDifficulty :: enum {
 	Beginner,
 	Intermediate,
 	Expert,
 }
 
-GameSize :: [GameDifficulty][2]i32 {
+GameSize :: [GameDifficulty]Coord {
 	.Beginner = {7, 7},
 	.Intermediate = {9, 9},
 	.Expert = {9, 9}
+}
+
+GamePadded :: [GameDifficulty]bool {
+	.Beginner = true,
+	.Intermediate = true,
+	.Expert = false
 }
 
 Game :: struct {
@@ -96,6 +98,7 @@ ConnectionTilemapCoords := map[Connection]Coord {
 	{.N, .E, .S} = {1, 4},
 	{.E, .S, .W} = {2, 4},
 	{.N, .S, .W} = {3, 4},
+	{.N, .E, .S, .W} = {0, 5}
 }
 
 ConnectionCardinality := map[Connection]Cardinal {
@@ -147,27 +150,8 @@ check_connections :: proc(current_idx: i32, game: ^Game, visited_tiles: ^[dynami
 		current_idx / game.width
 	}
 	for dir in game.tiles[current_idx].connection {
-		new_coord := current_coord
-		check_dir: Cardinal
-		switch dir {
-			case .N: {
-				new_coord.y = (new_coord.y - 1) %% game.height
-				check_dir = .S
-			}
-			case .E: {
-				new_coord.x = (new_coord.x + 1) %% game.width
-				check_dir = .W
-			}
-			case .S: {
-				new_coord.y = (new_coord.y + 1) %% game.height
-				check_dir = .N
-			}
-			case .W: {
-				new_coord.x = (new_coord.x - 1) %% game.width
-				check_dir = .E
-			}
+		new_coord, check_dir := get_adjacent_coord(dir, current_coord, {game.width, game.height})
 
-		}
 		new_idx := new_coord.y * game.width + new_coord.x
 		visited : bool
 		for v in visited_tiles {
@@ -245,7 +229,7 @@ rotate_tile :: proc(game: ^Game, coord: Coord, step: int) {
 	idx := coord.y * game.width + coord.x
 	prev_connection := game.tiles[idx].connection
 
-	if prev_connection == {} do return
+	if prev_connection == {} || prev_connection == {.N, .E, .S, .W} do return
 
 	new_connection: Connection
 	for pipe in prev_connection {
@@ -278,10 +262,16 @@ cycle_enum :: proc(value: $T, step: int) -> T {
 	return T((int(value) + step) %% len(T))
 }
 
-make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData) {
+Attempt_Average_Counter: i32
+Attempts_Sum: i32
+
+make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := false) {
 	width  := size.x
 	height := size.y
 	prev_zoom := game.camera.zoom
+
+	free_all(context.temp_allocator)
+
 	game^ = {
 		width = i32(width),
 		height = i32(height),
@@ -292,12 +282,35 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData) {
 	if prev_zoom != 0 {
 		game^.camera.zoom = prev_zoom
 	}
-	tile_data_map := TileDataMap
-	assert(len(game.tiles) == len(puzzle))
-	for pipe_data, i in puzzle {
-		tile_data := tile_data_map[pipe_data]
-		game.tiles[i].connection = tile_data.connection
-		game.tiles[i].tile_type = tile_data.tile
+
+	if len(puzzle) == 0 {
+		puzzle_data: []TileDataMin
+
+		Attempt_Average_Counter += 1
+		MAX_ATTEMPTS :: 200
+		for i in 1..=MAX_ATTEMPTS {
+			puzzle_data = generate_puzzle(size, pad)
+			if !check_four_ways(puzzle_data, 0) {
+				Attempts_Sum += i32(i)
+				fmt.println("attempts:", i, "average:", f32(Attempts_Sum) / f32(Attempt_Average_Counter))
+				break
+			}
+			if i == MAX_ATTEMPTS do fmt.println("attempts:", i, "(maximum)")
+		}
+
+		assert(len(game.tiles) == len(puzzle_data))
+		for tile_data, i in puzzle_data {
+			game.tiles[i].connection = tile_data.connection
+			game.tiles[i].tile_type  = tile_data.tile
+		}
+	} else {
+		assert(len(game.tiles) == len(puzzle))
+		tile_data_map := TileDataMap
+		for pipe_data, i in puzzle {
+			tile_data := tile_data_map[pipe_data]
+			game.tiles[i].connection = tile_data.connection
+			game.tiles[i].tile_type  = tile_data.tile
+		}
 	}
 }
 
@@ -313,7 +326,6 @@ set_window :: proc(window: ^Window, game: Game) {
 	if zoom == 1 {
 		window^.height += (UNIT + 2)*2
 	}
-	// rl.InitWindow(window.width, window.height, window.name)
 	rl.SetWindowSize(window.width, window.height)
 	rl.SetWindowState( window.control_flags )
 	rl.SetWindowTitle(window.name)
@@ -422,29 +434,25 @@ main :: proc() {
 				pipe_rect := Rect{f32(pipe_coord.x) * TILE_SIZE, f32(pipe_coord.y) * TILE_SIZE, TILE_SIZE, TILE_SIZE}
 				tile_rect := Rect{f32(tile_coord.x) * TILE_SIZE, f32(tile_coord.y) * TILE_SIZE, TILE_SIZE, TILE_SIZE}
 
-				// rl.DrawRectangleLines(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, rl.DARKGRAY)
-
 				if game.tiles[idx].fixed {
 					rl.DrawRectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, {64, 64, 128, 128})
 				}
-
-				rl.DrawTextureRec(tilemap_texture, pipe_rect, {f32(x) * TILE_SIZE, f32(y) * TILE_SIZE}, rl.WHITE)
-				rl.DrawTextureRec(tilemap_texture, tile_rect, {f32(x) * TILE_SIZE, f32(y) * TILE_SIZE}, rl.WHITE)
-
-				if game.game_won {
-					x: i32 = (game.width * TILE_SIZE / 2) - nice_texture.width/2
-					y: i32 = (game.height * TILE_SIZE / 2) - nice_texture.height/2
-					if game.moves == game.target_moves {
-						y -= perfect_texture.height / 2
-						rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
-					}
-					rl.DrawTexture(nice_texture, x, y, rl.WHITE)
-
-				}
+				position:Vec2 = {f32(x) * TILE_SIZE, f32(y) * TILE_SIZE}
+				rl.DrawTextureRec(tilemap_texture, pipe_rect, position, rl.WHITE)
+				rl.DrawTextureRec(tilemap_texture, tile_rect, position, rl.WHITE)
 			}
 		}
 
+		if game.game_won {
+			x: i32 = (game.width * TILE_SIZE / 2) - nice_texture.width/2
+			y: i32 = (game.height * TILE_SIZE / 2) - nice_texture.height/2
+			if game.moves == game.target_moves {
+				y -= perfect_texture.height / 2
+				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
+			}
+			rl.DrawTexture(nice_texture, x, y, rl.WHITE)
 
+		}
 
 		// rl.DrawFPS(0, 0)
 		rl.EndMode2D()
