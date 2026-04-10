@@ -14,7 +14,8 @@ Window :: struct {
 	control_flags: rl.ConfigFlags,
 }
 
-TILE_SIZE :: 48
+TW :: 48
+TH :: 48
 
 Cardinal :: enum {
 	N,E,S,W
@@ -276,7 +277,7 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 		width = i32(width),
 		height = i32(height),
 		tiles = make_slice([]TileData, width * height, context.temp_allocator),
-		camera = rl.Camera2D{zoom = 2},
+		camera = rl.Camera2D{zoom = 2, offset = {0, Menu_Height}},
 		last_rotated_tile = -1,
 	}
 	if prev_zoom != 0 {
@@ -314,21 +315,29 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 	}
 }
 
-set_window :: proc(window: ^Window, game: Game) {
-	zoom := i32(max(game.camera.zoom, 1))
+set_window :: proc(window: ^Window, game: ^Game) {
+	set_window_size(window, game)
+	rl.SetWindowSize(window.width, window.height)
+	rl.SetWindowState( window.control_flags )	
+	rl.SetWindowTitle(window.name)
+}
+
+set_window_size :: proc(window: ^Window, game: ^Game) {
+	zoom := max(game.camera.zoom, 1)
+	if zoom < 2 {
+		Menu_Height = UNIT*3 + PAD*4
+	} else {
+		Menu_Height = UNIT + PAD*2
+	}
+	game^.camera.offset.y = (Menu_Height)
 	window^ = Window {
 		name = "NETWALK",
-		width = TILE_SIZE * game.width * zoom + 1,
-		height = TILE_SIZE * game.height * zoom + 1 + UNIT,
-		fps = 30,
-		control_flags = rl.ConfigFlags{ /*.WINDOW_RESIZABLE*/ } 
+		width = i32(f32(TW * game.width) * zoom + 1),
+		height = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
+		fps = 120,
+		control_flags = rl.ConfigFlags{ .VSYNC_HINT } 
 	}
-	if zoom == 1 {
-		window^.height += (UNIT + 2)*2
-	}
-	rl.SetWindowSize(window.width, window.height)
-	rl.SetWindowState( window.control_flags )
-	rl.SetWindowTitle(window.name)
+
 }
 
 ZoomAction :: enum {
@@ -340,10 +349,10 @@ ZoomAction :: enum {
 do_zoom :: proc(game: ^Game, window: ^Window, action: ZoomAction) {
 	switch action {
 		case .zoom_reset: 	game.camera.zoom = 2
-		case .zoom_in: 		game.camera.zoom = 2
-		case .zoom_out: 	game.camera.zoom = 1
+		case .zoom_in: 		game.camera.zoom = min(game.camera.zoom + 0.5, 3)
+		case .zoom_out: 	game.camera.zoom = max(game.camera.zoom - 0.5, 1)
 	}
-	set_window(window, game^)
+	set_window(window, game)
 }
 
 main :: proc() {
@@ -354,12 +363,11 @@ main :: proc() {
 	// make_game(&game, GameSize[.Expert], TEST_PUZZLE_EXPERT_SOLVED)
 	make_game(&game, GameSize[.Expert], {}, GamePadded[.Expert])
 	scramble_puzzle(&game)
-
+	set_window_size(&window, &game)
 	rl.ChangeDirectory(rl.GetApplicationDirectory())
 	rl.ChangeDirectory("assets")
 	rl.InitWindow(window.width, window.height, window.name)
-	// rl.SetWindowState( window.control_flags )
-	set_window(&window, game)
+	set_window(&window, &game)
 	rl.SetTargetFPS(window.fps)
 
 	tilemap_texture := rl.LoadTexture("tilemap_48.png")
@@ -370,13 +378,18 @@ main :: proc() {
 	make_network(&game)
 
 	for !rl.WindowShouldClose() {
+
+		if rl.IsKeyPressed(.EQUAL) do do_zoom(&game, &window, .zoom_in)
+		if rl.IsKeyPressed(.MINUS) do do_zoom(&game, &window, .zoom_out)
+
+
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.BLACK)
 
 		rl.BeginMode2D(game.camera)
 
 		mouse_position := rl.GetScreenToWorld2D(rl.GetMousePosition(), game.camera)
-		mouse_coord_float := mouse_position / TILE_SIZE
+		mouse_coord_float := mouse_position / {TW, TH}
 		mouse_coord : Coord = {i32(math.floor(mouse_coord_float.x)), i32(math.floor(mouse_coord_float.y))} //floor only needed for mouse values less than zero
 		cursor_on_screen := rl.IsCursorOnScreen()
 		cursor_in_puzzle := mouse_coord.x >= 0 && mouse_coord.x < game.width && mouse_coord.y >= 0 && mouse_coord.y < game.height
@@ -384,7 +397,6 @@ main :: proc() {
 		if !game.game_won && cursor_in_puzzle {
 			color := rl.Color{0, 255, 255, 255}
 			idx := mouse_coord.y * game.width + mouse_coord.x
-
 			if rl.IsMouseButtonPressed(.MIDDLE) || rl.IsKeyPressed(.SPACE) {
 				game.tiles[idx].fixed = !game.tiles[idx].fixed
 			}
@@ -405,14 +417,14 @@ main :: proc() {
 				game.game_won = true
 			}
 
-			rl.DrawRectangle(mouse_coord.x * TILE_SIZE, mouse_coord.y * TILE_SIZE, TILE_SIZE, TILE_SIZE, color)
+			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, color)
 		}
 
-		for y:i32 = 1; y <= game.height; y+=1 {
-			rl.DrawLine(0, y * TILE_SIZE, game.width * TILE_SIZE, y * TILE_SIZE, rl.DARKGRAY)
+		for y:i32 = 0; y <= game.height; y+=1 {
+			rl.DrawLine(0, y * TH, game.width * TW, y * TH, rl.DARKGRAY)
 		}
 		for x:i32 = 1; x < game.width; x+=1 {
-			rl.DrawLine(x * TILE_SIZE, 0, x  * TILE_SIZE, game.height * TILE_SIZE, rl.DARKGRAY)
+			rl.DrawLine(x * TW, 0, x  * TW, game.height * TH, rl.DARKGRAY)
 		}
 
 		for y:i32 = 0; y < game.height; y+=1 {
@@ -433,21 +445,21 @@ main :: proc() {
 					}
 				}
 
-				pipe_rect := Rect{f32(pipe_coord.x) * TILE_SIZE, f32(pipe_coord.y) * TILE_SIZE, TILE_SIZE, TILE_SIZE}
-				tile_rect := Rect{f32(tile_coord.x) * TILE_SIZE, f32(tile_coord.y) * TILE_SIZE, TILE_SIZE, TILE_SIZE}
+				pipe_rect := Rect{f32(pipe_coord.x) * TW, f32(pipe_coord.y) * TH, TW, TH}
+				tile_rect := Rect{f32(tile_coord.x) * TW, f32(tile_coord.y) * TH, TW, TH}
 
 				if game.tiles[idx].fixed {
-					rl.DrawRectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, {64, 64, 128, 128})
+					rl.DrawRectangle(x * TW, y * TH, TW, TH, {64, 64, 128, 128})
 				}
-				position:Vec2 = {f32(x) * TILE_SIZE, f32(y) * TILE_SIZE}
+				position:Vec2 = {f32(x) * TW, f32(y) * TH}
 				rl.DrawTextureRec(tilemap_texture, pipe_rect, position, rl.WHITE)
 				rl.DrawTextureRec(tilemap_texture, tile_rect, position, rl.WHITE)
 			}
 		}
 
 		if game.game_won {
-			x: i32 = (game.width * TILE_SIZE / 2) - nice_texture.width/2
-			y: i32 = (game.height * TILE_SIZE / 2) - nice_texture.height/2
+			x: i32 = (game.width * TW / 2) - nice_texture.width/2
+			y: i32 = (game.height * TH / 2) - nice_texture.height/2
 			if game.moves == game.target_moves {
 				y -= perfect_texture.height / 2
 				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
