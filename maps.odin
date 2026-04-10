@@ -119,7 +119,7 @@ TEST_PUZZLE_EXPERT :: []PipeData {
 	.PStrN, .PCorE, .PCorS, .PCorE, .PTriS, .PTriS, .PTriN, .PTriS, .PCorE,
 	.PStrN, .PStrE, .PTriN, .SCorN, .PStrE, .TermS, .PCorE, .PCorN, .TermW,
 	.PTriN, .PTriS, .PStrE, .TermE, .PCorS, .TermE, .PCorS, .TermN, .PTriN,
-	.TermS, .PCorN, .PTriS, .PTriS, .PTriN, .PStrE, .PStrN, .TermE, .PStrE
+	.TermS, .PCorN, .PTriS, .PTriS, .PTriN, .PStrE, .PStrN, .TermE, .PStrE,
 }
 
 TEST_PUZZLE_BEGINNER_SOLVED :: []PipeData {

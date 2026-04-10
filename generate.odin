@@ -1,8 +1,6 @@
 package Netwalk
 
-import "core:fmt"
 import "core:math/rand"
-
 
 
 check_four_ways :: proc(tiles: []TileDataMin, threshold: i32) -> bool {
@@ -15,7 +13,7 @@ check_four_ways :: proc(tiles: []TileDataMin, threshold: i32) -> bool {
 }
 
 generate_puzzle :: proc(size: Coord, pad: bool) -> []TileDataMin {
-	tiles := make([]TileDataMin, size.x*size.y, context.temp_allocator)
+	tiles := make([]TileDataMin, size.x * size.y, context.temp_allocator)
 
 	//maximal connective
 	for &tile in tiles {
@@ -23,18 +21,17 @@ generate_puzzle :: proc(size: Coord, pad: bool) -> []TileDataMin {
 	}
 
 	//add pad margin
-	if pad do for y:i32=0; y<size.y; y+=1 do for x:i32=0; x<size.x; x+=1 {
-		coord := Coord{x, y}
-		idx := y*size.x + x
-		if x == 0 			do tiles[idx].connection = {}
-		if x == size.x - 1 	do tiles[idx].connection = {}
-		if y == 0 			do tiles[idx].connection = {}
-		if y == size.y - 1 	do tiles[idx].connection = {}
+	if pad do for y: i32 = 0; y < size.y; y += 1 do for x: i32 = 0; x < size.x; x += 1 {
+		idx := y * size.x + x
+		if x == 0 do tiles[idx].connection = {}
+		if x == size.x - 1 do tiles[idx].connection = {}
+		if y == 0 do tiles[idx].connection = {}
+		if y == size.y - 1 do tiles[idx].connection = {}
 
-		if x == 1 			do tiles[idx].connection -= {.W}
-		if x == size.x - 2 	do tiles[idx].connection -= {.E}
-		if y == 1 			do tiles[idx].connection -= {.N}
-		if y == size.y - 2 	do tiles[idx].connection -= {.S}
+		if x == 1 do tiles[idx].connection -= {.W}
+		if x == size.x - 2 do tiles[idx].connection -= {.E}
+		if y == 1 do tiles[idx].connection -= {.N}
+		if y == size.y - 2 do tiles[idx].connection -= {.S}
 	}
 
 	inner := size - (pad ? 2 : 0)
@@ -54,7 +51,7 @@ generate_puzzle :: proc(size: Coord, pad: bool) -> []TileDataMin {
 	}
 	rand.shuffle(shuffled_pipes)
 
-	test_tiles:= make_slice([]TileDataMin, len(tiles))
+	test_tiles := make_slice([]TileDataMin, len(tiles))
 	defer delete(test_tiles)
 
 	for pipe_idx in shuffled_pipes {
@@ -64,18 +61,18 @@ generate_puzzle :: proc(size: Coord, pad: bool) -> []TileDataMin {
 		// if card(tiles[tile_idx].connection) < 4 do continue //check that breaks it in kinda interesting way
 		if cardinal not_in tiles[tile_idx].connection do continue
 
-		copy_slice(test_tiles, tiles) 
+		copy_slice(test_tiles, tiles)
 
 		destination_idx, destination_wall := get_adjacent_idx(cardinal, tile_idx, size)
-		
+
 		test_tiles[tile_idx].connection -= {cardinal}
 		test_tiles[destination_idx].connection -= {destination_wall}
-		
+
 		visited_tiles: [dynamic]i32
 		defer delete(visited_tiles)
 
 		if find_connection(tile_idx, destination_idx, test_tiles, size, &visited_tiles) {
-			copy_slice(tiles, test_tiles) 
+			copy_slice(tiles, test_tiles)
 		}
 	}
 
@@ -90,10 +87,16 @@ generate_puzzle :: proc(size: Coord, pad: bool) -> []TileDataMin {
 }
 
 
-find_connection :: proc(current_idx: i32, destination_idx: i32, tiles: []TileDataMin, size: Coord, visited_tiles: ^[dynamic]i32) -> bool {
+find_connection :: proc(
+	current_idx: i32,
+	destination_idx: i32,
+	tiles: []TileDataMin,
+	size: Coord,
+	visited_tiles: ^[dynamic]i32,
+) -> bool {
 	append(visited_tiles, current_idx)
 	check_pipes: for pipe in tiles[current_idx].connection {
-		adjacent_idx, adjacent_wall := get_adjacent_idx(pipe, current_idx, size)
+		adjacent_idx, _ := get_adjacent_idx(pipe, current_idx, size)
 		for v_idx in visited_tiles {
 			if adjacent_idx == v_idx do continue check_pipes
 		}
@@ -107,7 +110,7 @@ find_connection :: proc(current_idx: i32, destination_idx: i32, tiles: []TileDat
 }
 
 get_adjacent_idx :: proc(dir: Cardinal, idx: i32, size: Coord) -> (i32, Cardinal) {
-	coord := Coord {idx % size.x, idx / size.y}
+	coord := Coord{idx % size.x, idx / size.y}
 	adj_coord, adj_card := get_adjacent_coord(dir, coord, size)
 	adj_idx := adj_coord.y * size.x + adj_coord.x
 	return adj_idx, adj_card
@@ -117,19 +120,23 @@ get_adjacent_coord :: proc(dir: Cardinal, coord: Coord, size: Coord) -> (Coord, 
 	coord := coord
 	adjacent_cardinal: Cardinal
 	switch dir {
-		case .N: {
+	case .N:
+		{
 			coord.y = (coord.y - 1) %% size.y
 			adjacent_cardinal = .S
 		}
-		case .E: {
+	case .E:
+		{
 			coord.x = (coord.x + 1) %% size.x
 			adjacent_cardinal = .W
 		}
-		case .S: {
+	case .S:
+		{
 			coord.y = (coord.y + 1) %% size.y
 			adjacent_cardinal = .N
 		}
-		case .W: {
+	case .W:
+		{
 			coord.x = (coord.x - 1) %% size.x
 			adjacent_cardinal = .E
 		}

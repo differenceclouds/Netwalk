@@ -26,14 +26,19 @@
 		},
 		{
 			"name": "odin_build_release",
-			"shell_cmd": "odin build .",
+			"shell_cmd": "odin build . -o:speed -vet -strict-style",
 			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
 		},
 		{
 			"name": "odin_build_run_win",
 			"cmd": "odin run . -debug",
 			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+		},
+		{
+			"name": "odin_build_win_release",
+			"cmd": "odin build . -subsystem:windows -o:speed"
 		}
+
 	],
 	"settings":
 	{

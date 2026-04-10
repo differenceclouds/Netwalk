@@ -2,13 +2,13 @@
 package Netwalk
 
 import "core:fmt"
-import rl "vendor:raylib"
 import "core:math"
 import "core:math/rand"
+import rl "vendor:raylib"
 
-Window :: struct { 
+Window :: struct {
 	name:          cstring,
-	width:         i32, 
+	width:         i32,
 	height:        i32,
 	fps:           i32,
 	control_flags: rl.ConfigFlags,
@@ -18,7 +18,10 @@ TW :: 48
 TH :: 48
 
 Cardinal :: enum {
-	N,E,S,W
+	N,
+	E,
+	S,
+	W,
 }
 Connection :: bit_set[Cardinal]
 
@@ -45,42 +48,42 @@ GameDifficulty :: enum {
 }
 
 GameSize :: [GameDifficulty]Coord {
-	.Beginner = {7, 7},
+	.Beginner     = {7, 7},
 	.Intermediate = {9, 9},
-	.Expert = {9, 9}
+	.Expert       = {9, 9},
 }
 
 GamePadded :: [GameDifficulty]bool {
-	.Beginner = true,
+	.Beginner     = true,
 	.Intermediate = true,
-	.Expert = false
+	.Expert       = false,
 }
 
 Game :: struct {
-	width: i32,
-	height: i32,
-	tiles: []TileData,
-	camera: rl.Camera2D,
-	game_won: bool,
+	width:                              i32,
+	height:                             i32,
+	tiles:                              []TileData,
+	camera:                             rl.Camera2D,
+	game_won:                           bool,
 
 	//following only used for move counter
-	last_rotated_tile: i32,
+	last_rotated_tile:                  i32,
 	initial_state_of_last_rotated_tile: Connection,
-	initial_moves: i32,
-	moves: i32,
-	target_moves: i32
+	initial_moves:                      i32,
+	moves:                              i32,
+	target_moves:                       i32,
 }
 
 TileData :: struct {
-	tile_type: TileType,
+	tile_type:  TileType,
 	connection: Connection,
-	networked: bool,
-	fixed: bool
+	networked:  bool,
+	fixed:      bool,
 }
 
 TileCoords := [TileType]Coord {
-	.Pipe = {0,0},
-	.Server = {1, 0},
+	.Pipe     = {0, 0},
+	.Server   = {1, 0},
 	.Terminal = {2, 0},
 }
 
@@ -99,7 +102,7 @@ ConnectionTilemapCoords := map[Connection]Coord {
 	{.N, .E, .S} = {1, 4},
 	{.E, .S, .W} = {2, 4},
 	{.N, .S, .W} = {3, 4},
-	{.N, .E, .S, .W} = {0, 5}
+	{.N, .E, .S, .W} = {0, 5},
 }
 
 ConnectionCardinality := map[Connection]Cardinal {
@@ -107,15 +110,12 @@ ConnectionCardinality := map[Connection]Cardinal {
 	{.E} = .E,
 	{.S} = .S,
 	{.W} = .W,
-
 	{.N, .S} = .N,
 	{.W, .E} = .E,
-
 	{.N, .E} = .N,
 	{.E, .S} = .E,
 	{.S, .W} = .S,
 	{.W, .N} = .W,
-
 	{.N, .E, .S} = .N,
 	{.E, .S, .W} = .E,
 	{.N, .S, .W} = .S,
@@ -143,18 +143,14 @@ make_network :: proc(game: ^Game) {
 }
 
 
-
 check_connections :: proc(current_idx: i32, game: ^Game, visited_tiles: ^[dynamic]i32) {
 	append(visited_tiles, current_idx)
-	current_coord : Coord = {
-		current_idx % game.width,
-		current_idx / game.width
-	}
+	current_coord: Coord = {current_idx % game.width, current_idx / game.width}
 	for dir in game.tiles[current_idx].connection {
 		new_coord, check_dir := get_adjacent_coord(dir, current_coord, {game.width, game.height})
 
 		new_idx := new_coord.y * game.width + new_coord.x
-		visited : bool
+		visited: bool
 		for v in visited_tiles {
 			if new_idx == v do visited = true
 		}
@@ -239,7 +235,6 @@ rotate_tile :: proc(game: ^Game, coord: Coord, step: int) {
 	game.tiles[idx].connection = new_connection
 
 
-
 	//handle move counter
 	init_cardinality := ConnectionCardinality[game.initial_state_of_last_rotated_tile]
 	new_cardinality := ConnectionCardinality[new_connection]
@@ -267,7 +262,7 @@ Attempt_Average_Counter: i32
 Attempts_Sum: i32
 
 make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := false) {
-	width  := size.x
+	width := size.x
 	height := size.y
 	prev_zoom := game.camera.zoom
 
@@ -289,20 +284,20 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 
 		Attempt_Average_Counter += 1
 		MAX_ATTEMPTS :: 200
-		for i in 1..=MAX_ATTEMPTS {
+		for i in 1 ..= MAX_ATTEMPTS {
 			puzzle_data = generate_puzzle(size, pad)
 			if !check_four_ways(puzzle_data, 0) {
 				Attempts_Sum += i32(i)
-				fmt.println("attempts:", i, "average:", f32(Attempts_Sum) / f32(Attempt_Average_Counter))
+				if ODIN_DEBUG do fmt.println("attempts:", i, "average:", f32(Attempts_Sum) / f32(Attempt_Average_Counter))
 				break
 			}
-			if i == MAX_ATTEMPTS do fmt.println("attempts:", i, "(maximum)")
+			if ODIN_DEBUG do if i == MAX_ATTEMPTS do fmt.println("attempts:", i, "(maximum)")
 		}
 
 		assert(len(game.tiles) == len(puzzle_data))
 		for tile_data, i in puzzle_data {
 			game.tiles[i].connection = tile_data.connection
-			game.tiles[i].tile_type  = tile_data.tile
+			game.tiles[i].tile_type = tile_data.tile
 		}
 	} else {
 		assert(len(game.tiles) == len(puzzle))
@@ -310,7 +305,7 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 		for pipe_data, i in puzzle {
 			tile_data := tile_data_map[pipe_data]
 			game.tiles[i].connection = tile_data.connection
-			game.tiles[i].tile_type  = tile_data.tile
+			game.tiles[i].tile_type = tile_data.tile
 		}
 	}
 }
@@ -318,24 +313,24 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 set_window :: proc(window: ^Window, game: ^Game) {
 	set_window_size(window, game)
 	rl.SetWindowSize(window.width, window.height)
-	rl.SetWindowState( window.control_flags )	
+	rl.SetWindowState(window.control_flags)
 	rl.SetWindowTitle(window.name)
 }
 
 set_window_size :: proc(window: ^Window, game: ^Game) {
 	zoom := max(game.camera.zoom, 1)
 	if zoom < 2 {
-		Menu_Height = UNIT*3 + PAD*4
+		Menu_Height = UNIT * 3 + PAD * 4
 	} else {
-		Menu_Height = UNIT + PAD*2
+		Menu_Height = UNIT + PAD * 2
 	}
 	game^.camera.offset.y = (Menu_Height)
 	window^ = Window {
-		name = "NETWALK",
-		width = i32(f32(TW * game.width) * zoom + 1),
-		height = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
-		fps = 120,
-		control_flags = rl.ConfigFlags{ .VSYNC_HINT } 
+		name          = "NETWALK",
+		width         = i32(f32(TW * game.width) * zoom + 1),
+		height        = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
+		fps           = 120,
+		control_flags = rl.ConfigFlags{.VSYNC_HINT},
 	}
 
 }
@@ -348,9 +343,12 @@ ZoomAction :: enum {
 
 do_zoom :: proc(game: ^Game, window: ^Window, action: ZoomAction) {
 	switch action {
-		case .zoom_reset: 	game.camera.zoom = 2
-		case .zoom_in: 		game.camera.zoom = min(game.camera.zoom + 0.5, 3)
-		case .zoom_out: 	game.camera.zoom = max(game.camera.zoom - 0.5, 1)
+	case .zoom_reset:
+		game.camera.zoom = 2
+	case .zoom_in:
+		game.camera.zoom = min(game.camera.zoom + 0.5, 3)
+	case .zoom_out:
+		game.camera.zoom = max(game.camera.zoom - 0.5, 1)
 	}
 	set_window(window, game)
 }
@@ -360,7 +358,6 @@ main :: proc() {
 	window: Window
 	gui_state: GuiState
 
-	// make_game(&game, GameSize[.Expert], TEST_PUZZLE_EXPERT_SOLVED)
 	make_game(&game, GameSize[.Expert], {}, GamePadded[.Expert])
 	scramble_puzzle(&game)
 	set_window_size(&window, &game)
@@ -382,7 +379,6 @@ main :: proc() {
 		if rl.IsKeyPressed(.EQUAL) do do_zoom(&game, &window, .zoom_in)
 		if rl.IsKeyPressed(.MINUS) do do_zoom(&game, &window, .zoom_out)
 
-
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.BLACK)
 
@@ -390,10 +386,16 @@ main :: proc() {
 
 		mouse_position := rl.GetScreenToWorld2D(rl.GetMousePosition(), game.camera)
 		mouse_coord_float := mouse_position / {TW, TH}
-		mouse_coord : Coord = {i32(math.floor(mouse_coord_float.x)), i32(math.floor(mouse_coord_float.y))} //floor only needed for mouse values less than zero
-		cursor_on_screen := rl.IsCursorOnScreen()
-		cursor_in_puzzle := mouse_coord.x >= 0 && mouse_coord.x < game.width && mouse_coord.y >= 0 && mouse_coord.y < game.height
-		
+		mouse_coord: Coord = {
+			i32(math.floor(mouse_coord_float.x)),
+			i32(math.floor(mouse_coord_float.y)),
+		} //floor only needed for mouse values less than zero
+		cursor_in_puzzle :=
+			mouse_coord.x >= 0 &&
+			mouse_coord.x < game.width &&
+			mouse_coord.y >= 0 &&
+			mouse_coord.y < game.height
+
 		if !game.game_won && cursor_in_puzzle {
 			color := rl.Color{0, 255, 255, 255}
 			idx := mouse_coord.y * game.width + mouse_coord.x
@@ -420,15 +422,15 @@ main :: proc() {
 			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, color)
 		}
 
-		for y:i32 = 0; y <= game.height; y+=1 {
+		for y: i32 = 0; y <= game.height; y += 1 {
 			rl.DrawLine(0, y * TH, game.width * TW, y * TH, rl.DARKGRAY)
 		}
-		for x:i32 = 1; x < game.width; x+=1 {
-			rl.DrawLine(x * TW, 0, x  * TW, game.height * TH, rl.DARKGRAY)
+		for x: i32 = 1; x < game.width; x += 1 {
+			rl.DrawLine(x * TW, 0, x * TW, game.height * TH, rl.DARKGRAY)
 		}
 
-		for y:i32 = 0; y < game.height; y+=1 {
-			for x:i32 = 0; x < game.width; x += 1 {
+		for y: i32 = 0; y < game.height; y += 1 {
+			for x: i32 = 0; x < game.width; x += 1 {
 				idx := y * game.width + x
 
 				tile_type := game.tiles[idx].tile_type
@@ -441,7 +443,8 @@ main :: proc() {
 				if is_networked {
 					pipe_coord.x += 4
 					#partial switch tile_type {
-						case .Terminal: tile_coord.x += 1
+					case .Terminal:
+						tile_coord.x += 1
 					}
 				}
 
@@ -451,15 +454,15 @@ main :: proc() {
 				if game.tiles[idx].fixed {
 					rl.DrawRectangle(x * TW, y * TH, TW, TH, {64, 64, 128, 128})
 				}
-				position:Vec2 = {f32(x) * TW, f32(y) * TH}
+				position: Vec2 = {f32(x) * TW, f32(y) * TH}
 				rl.DrawTextureRec(tilemap_texture, pipe_rect, position, rl.WHITE)
 				rl.DrawTextureRec(tilemap_texture, tile_rect, position, rl.WHITE)
 			}
 		}
 
 		if game.game_won {
-			x: i32 = (game.width * TW / 2) - nice_texture.width/2
-			y: i32 = (game.height * TH / 2) - nice_texture.height/2
+			x: i32 = (game.width * TW / 2) - nice_texture.width / 2
+			y: i32 = (game.height * TH / 2) - nice_texture.height / 2
 			if game.moves == game.target_moves {
 				y -= perfect_texture.height / 2
 				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
@@ -473,6 +476,6 @@ main :: proc() {
 		draw_menu(&game, &window, &gui_state)
 
 		rl.EndDrawing()
-			
+
 	}
 }
