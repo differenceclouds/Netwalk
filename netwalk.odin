@@ -383,6 +383,8 @@ main :: proc() {
 	nice_texture    := rl.LoadTexture("win.png")
 	perfect_texture := rl.LoadTexture("perfect.png")
 	carpet_texture  := rl.LoadTexture("carpet.png")
+	icon_image      := rl.LoadImage("Icon.png")
+	rl.SetWindowIcon(icon_image)
 	load_menu_resources(&gui_state)
 
 	make_network(&game)

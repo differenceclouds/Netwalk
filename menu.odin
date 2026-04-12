@@ -97,8 +97,8 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	if gui_state.help {
 		width :: 280
 		height :: 275
-		x := f32(window.width - width) / 2.0
-		y := f32(window.height - height) / 2.0
+		x = f32(window.width - width) / 2.0
+		y = f32(window.height - height) / 2.0
 		// rl.GuiTextBox({x, y, width, height}, "heee", 10, false)
 		if rl.GuiWindowBox({x, y, width, height}, "About Netwalk") != 0 {
 			gui_state.help = false

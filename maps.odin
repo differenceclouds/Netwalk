@@ -156,7 +156,7 @@ TEST_PUZZLE_EXPERT_SOLVED :: []PipeData {
 	.TermE, .PCorW, .PTriN, .PTriE, .PTriE, .PStrE, .PStrE, .TermW, .PStrN,
 }
 
-test_intermediate_maze_1 :: []PipeData {
+TEST_PUZZLE_INTERMEDIATE_2_SOLVED :: []PipeData {
 	.BLANK, .BLANK, .BLANK, .BLANK, .BLANK, .BLANK, .BLANK, .BLANK, .BLANK, 
 	.BLANK, .TermE, .PStrE, .PStrE, .PStrE, .PStrE, .PTriE, .TermW, .BLANK, 
 	.BLANK, .PCorE, .PStrE, .PStrE, .PTriE, .PStrE, .PTriW, .PCorS, .BLANK, 
