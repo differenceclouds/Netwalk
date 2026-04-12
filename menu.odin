@@ -112,6 +112,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 There will be no unused connections, and no
 loops. (Nearly) every puzzle can be completed
 in target number of moves without guessing.
+Expert puzzles loop at each edge.
 
 Controls:
 rotate  tile: left click / right click
