@@ -1,0 +1,10 @@
+<plist>
+<dict>
+    <key>CFBundleIconFile</key>
+    <string>./Icon.png</string>
+    <key>CFBundleExecutable</key>
+    <string>netwalk</string>
+    <key>CFBundleName</key>
+    <string>NETWALK</string>
+</dict>
+</plist>

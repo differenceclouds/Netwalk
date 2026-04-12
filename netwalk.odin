@@ -65,6 +65,7 @@ Game :: struct {
 	tiles:                              []TileData,
 	camera:                             rl.Camera2D,
 	game_won:                           bool,
+	hide_win_message:                   bool,
 
 	//following only used for move counter
 	last_rotated_tile:                  i32,
@@ -72,6 +73,9 @@ Game :: struct {
 	initial_moves:                      i32,
 	moves:                              i32,
 	target_moves:                       i32,
+
+	win_timer:                          f32,
+	// win_ticker:                         uint,
 }
 
 TileData :: struct {
@@ -260,6 +264,8 @@ cycle_enum :: proc(value: $T, step: int) -> T {
 
 Attempt_Average_Counter: i32
 Attempts_Sum: i32
+Allow_Fourways: bool
+Game_Started: bool
 
 make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := false) {
 	width := size.x
@@ -282,17 +288,23 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 	if len(puzzle) == 0 {
 		puzzle_data: []TileDataMin
 
-		Attempt_Average_Counter += 1
-		MAX_ATTEMPTS :: 200
-		for i in 1 ..= MAX_ATTEMPTS {
+
+		if Allow_Fourways {
 			puzzle_data = generate_puzzle(size, pad)
-			if !check_four_ways(puzzle_data, 0) {
-				Attempts_Sum += i32(i)
-				if ODIN_DEBUG do fmt.println("attempts:", i, "average:", f32(Attempts_Sum) / f32(Attempt_Average_Counter))
-				break
+		} else {
+			Attempt_Average_Counter += 1
+			MAX_ATTEMPTS :: 2000
+			for i in 1 ..= MAX_ATTEMPTS {
+				puzzle_data = generate_puzzle(size, pad)
+				if !check_four_ways(puzzle_data, 0) {
+					Attempts_Sum += i32(i)
+					if ODIN_DEBUG do fmt.println("attempts:", i, "average:", f32(Attempts_Sum) / f32(Attempt_Average_Counter))
+					break
+				}
+				if ODIN_DEBUG do if i == MAX_ATTEMPTS do fmt.println("attempts:", i, "(maximum)")
 			}
-			if ODIN_DEBUG do if i == MAX_ATTEMPTS do fmt.println("attempts:", i, "(maximum)")
 		}
+
 
 		assert(len(game.tiles) == len(puzzle_data))
 		for tile_data, i in puzzle_data {
@@ -329,8 +341,8 @@ set_window_size :: proc(window: ^Window, game: ^Game) {
 		name          = "NETWALK",
 		width         = i32(f32(TW * game.width) * zoom + 1),
 		height        = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
-		fps           = 120,
-		control_flags = rl.ConfigFlags{.VSYNC_HINT},
+		fps           = 0,
+		control_flags = rl.ConfigFlags{ },
 	}
 
 }
@@ -359,7 +371,7 @@ main :: proc() {
 	gui_state: GuiState
 
 	make_game(&game, GameSize[.Expert], {}, GamePadded[.Expert])
-	scramble_puzzle(&game)
+	// scramble_puzzle(&game)
 	set_window_size(&window, &game)
 	rl.ChangeDirectory(rl.GetApplicationDirectory())
 	rl.ChangeDirectory("assets")
@@ -368,8 +380,9 @@ main :: proc() {
 	rl.SetTargetFPS(window.fps)
 
 	tilemap_texture := rl.LoadTexture("tilemap_48.png")
-	nice_texture := rl.LoadTexture("win.png")
+	nice_texture    := rl.LoadTexture("win.png")
 	perfect_texture := rl.LoadTexture("perfect.png")
+	carpet_texture  := rl.LoadTexture("carpet.png")
 	load_menu_resources(&gui_state)
 
 	make_network(&game)
@@ -378,11 +391,18 @@ main :: proc() {
 
 		if rl.IsKeyPressed(.EQUAL) do do_zoom(&game, &window, .zoom_in)
 		if rl.IsKeyPressed(.MINUS) do do_zoom(&game, &window, .zoom_out)
+		if game.game_won {
+
+			game.win_timer += rl.GetFrameTime()
+			// game.win_ticker += 1
+			if game.win_timer >= 1 && rl.IsMouseButtonPressed(.LEFT) do game.hide_win_message = true
+		}
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.BLACK)
 
 		rl.BeginMode2D(game.camera)
+		rl.DrawTextureRec(carpet_texture, {0, 0, f32(window.width), f32(window.height)}, 0, rl.WHITE)
 
 		mouse_position := rl.GetScreenToWorld2D(rl.GetMousePosition(), game.camera)
 		mouse_coord_float := mouse_position / {TW, TH}
@@ -396,8 +416,7 @@ main :: proc() {
 			mouse_coord.y >= 0 &&
 			mouse_coord.y < game.height
 
-		if !game.game_won && cursor_in_puzzle {
-			color := rl.Color{0, 255, 255, 255}
+		if (!game.game_won || !Game_Started) && cursor_in_puzzle && !gui_state.help{
 			idx := mouse_coord.y * game.width + mouse_coord.x
 			if rl.IsMouseButtonPressed(.MIDDLE) || rl.IsKeyPressed(.SPACE) {
 				game.tiles[idx].fixed = !game.tiles[idx].fixed
@@ -415,19 +434,21 @@ main :: proc() {
 				move_made = true
 			}
 
-			if move_made && check_win(game) {
+			if move_made && check_win(game) && Game_Started {
 				game.game_won = true
 			}
 
-			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, color)
+			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, {0, 0, 255, 64})
+		}
+		if !game.game_won {
+			for y: f32 = 0; y <= f32(game.height); y += 1 {
+				rl.DrawLineEx({0, y * TH} + 0.5, {f32(game.width * TW), y * TH} + 0.5, 1, {128, 128, 128, 48})
+			}
+			for x: f32 = 1; x < f32(game.width); x += 1 {
+				rl.DrawLineEx({x * TW, 0} + 0.5, {x * TW, f32(game.height * TH)} + 0.5, 1, {128, 128, 128, 48})
+			}
 		}
 
-		for y: i32 = 0; y <= game.height; y += 1 {
-			rl.DrawLine(0, y * TH, game.width * TW, y * TH, rl.DARKGRAY)
-		}
-		for x: i32 = 1; x < game.width; x += 1 {
-			rl.DrawLine(x * TW, 0, x * TW, game.height * TH, rl.DARKGRAY)
-		}
 
 		for y: i32 = 0; y < game.height; y += 1 {
 			for x: i32 = 0; x < game.width; x += 1 {
@@ -444,14 +465,15 @@ main :: proc() {
 					pipe_coord.x += 4
 					#partial switch tile_type {
 					case .Terminal:
-						tile_coord.x += 1
+						tile_coord.x += game.game_won ? 2 : 1
+
 					}
 				}
 
 				pipe_rect := Rect{f32(pipe_coord.x) * TW, f32(pipe_coord.y) * TH, TW, TH}
 				tile_rect := Rect{f32(tile_coord.x) * TW, f32(tile_coord.y) * TH, TW, TH}
 
-				if game.tiles[idx].fixed {
+				if !game.game_won && game.tiles[idx].fixed {
 					rl.DrawRectangle(x * TW, y * TH, TW, TH, {64, 64, 128, 128})
 				}
 				position: Vec2 = {f32(x) * TW, f32(y) * TH}
@@ -460,15 +482,17 @@ main :: proc() {
 			}
 		}
 
-		if game.game_won {
-			x: i32 = (game.width * TW / 2) - nice_texture.width / 2
+		if game.game_won && !game.hide_win_message {
+
+			win_offset := max(500 - game.win_timer * 300, 0)
+
+			x: i32 = i32(f32(game.width) * TW / 2.0 - f32(nice_texture.width) / 2.0 + win_offset)
 			y: i32 = (game.height * TH / 2) - nice_texture.height / 2
 			if game.moves == game.target_moves {
 				y -= perfect_texture.height / 2
 				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
 			}
 			rl.DrawTexture(nice_texture, x, y, rl.WHITE)
-
 		}
 
 		// rl.DrawFPS(0, 0)
