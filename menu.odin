@@ -6,17 +6,30 @@ import rl "vendor:raylib"
 
 load_menu_resources :: proc(gui_state: ^GuiState) {
 	rl.GuiLoadStyle("style_terminal.rgs")
+	gui_state.help = true
 }
 
 GuiState :: struct {
 	help: bool,
 	menu_expanded: bool,
+	all_terminals_message: bool,
 }
 
 UNIT :: 20
 BUTTON_WIDTH :: 80
 PAD :: 2
 
+
+// new_game_button :: proc(game: ^Game, gui_state: ^GuiState, window: ^Window, difficulty: GameDifficulty) {
+	
+// 	make_game(game, GameSize[difficulty], {}, GamePadded[difficulty])
+// 	Game_Started = true
+// 	scramble_puzzle(game)
+// 	// new_game_pressed = true
+// 	gui_state.help = false
+// 	set_window(window, game)
+// 	make_network(game)
+// }
 
 Menu_Height:f32= UNIT + 4
 
@@ -53,6 +66,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		Game_Started = true
 		scramble_puzzle(game)
 		new_game_pressed = true
+		gui_state.help = false
 	}
 	x += BUTTON_WIDTH + PAD
 	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Intermediate") {
@@ -60,6 +74,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		Game_Started = true
 		scramble_puzzle(game)
 		new_game_pressed = true
+		gui_state.help = false
 	}
 	x += BUTTON_WIDTH + PAD
 	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Expert") {
@@ -67,6 +82,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		Game_Started = true
 		scramble_puzzle(game)
 		new_game_pressed = true
+		gui_state.help = false
 	}
 	x += BUTTON_WIDTH + UNIT
 
@@ -87,7 +103,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	}
 	x += UNIT*2 + PAD
 
-	rl.GuiCheckBox({x, y, UNIT, UNIT}, "Allow 4-way tiles", &Allow_Fourways)
+	// rl.GuiCheckBox({x, y, UNIT, UNIT}, "Allow 4-way tiles", &Allow_Fourways)
 
 	if new_game_pressed {
 		set_window(window, game)
@@ -108,7 +124,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		rl.GuiLock()
 
 		help_text: cstring :
-`Try to connect all terminals to the server!
+`Connect all terminals to the server!
 There will be no unused connections, and no
 loops. (Nearly) every puzzle can be completed
 in target number of moves without guessing.
@@ -119,5 +135,28 @@ rotate  tile: left click / right click
 lock tile: middle click / spacebar
 set game scale: - / +`
 		rl.GuiTextBox({x, y, width, height - 23}, help_text, 10, false)
+		rl.GuiUnlock()
+	}
+
+
+	if gui_state.all_terminals_message {
+		width :: 280
+		height :: 150
+		x = f32(window.width - width) / 2.0
+		y = f32(window.height - height) / 2.0
+		// rl.GuiTextBox({x, y, width, height}, "heee", 10, false)
+		if rl.GuiWindowBox({x, y, width, height}, "Boss") != 0 {
+			gui_state.all_terminals_message = false
+		}
+
+		y += 23
+		rl.GuiLock()
+
+		text: cstring :
+`HMMMMMMMMM... Very clever.
+We gotta use ALL this piping though.
+Keep crackin!`
+		rl.GuiTextBox({x, y, width, height - 23}, text, 10, false)
+		rl.GuiUnlock()
 	}
 }

@@ -65,6 +65,7 @@ Game :: struct {
 	tiles:                              []TileData,
 	camera:                             rl.Camera2D,
 	game_won:                           bool,
+	all_terminals_used:                 bool,
 	hide_win_message:                   bool,
 
 	//following only used for move counter
@@ -75,6 +76,7 @@ Game :: struct {
 	target_moves:                       i32,
 
 	win_timer:                          f32,
+	win_message_complete:               bool,
 	// win_ticker:                         uint,
 }
 
@@ -145,6 +147,14 @@ make_network :: proc(game: ^Game) {
 		check_connections(server_idx, game, &visited_tiles)
 	}
 }
+
+check_terminals :: proc(game:Game) -> bool {
+	for tile in game.tiles {
+		if tile.tile_type == .Terminal && !tile.networked do return false
+	}
+	return true
+}
+
 
 
 check_connections :: proc(current_idx: i32, game: ^Game, visited_tiles: ^[dynamic]i32) {
@@ -267,6 +277,13 @@ Attempts_Sum: i32
 Allow_Fourways: bool
 Game_Started: bool
 
+
+// make_hash :: proc(tiles: []TileDataMin) -> []byte {
+// 	for tile in tiles {
+// 		tile.
+// 	}
+// }
+
 make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := false) {
 	width := size.x
 	height := size.y
@@ -293,7 +310,7 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 			puzzle_data = generate_puzzle(size, pad)
 		} else {
 			Attempt_Average_Counter += 1
-			MAX_ATTEMPTS :: 2000
+			MAX_ATTEMPTS :: 150
 			for i in 1 ..= MAX_ATTEMPTS {
 				puzzle_data = generate_puzzle(size, pad)
 				if !check_four_ways(puzzle_data, 0) {
@@ -341,7 +358,7 @@ set_window_size :: proc(window: ^Window, game: ^Game) {
 		name          = "NETWALK",
 		width         = i32(f32(TW * game.width) * zoom + 1),
 		height        = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
-		fps           = 0,
+		fps           = 30,
 		control_flags = rl.ConfigFlags{ },
 	}
 
@@ -379,12 +396,14 @@ main :: proc() {
 	set_window(&window, &game)
 	rl.SetTargetFPS(window.fps)
 
-	tilemap_texture := rl.LoadTexture("tilemap_48.png")
+	tilemap_texture := rl.LoadTexture("tilemap3.png")
 	nice_texture    := rl.LoadTexture("win.png")
 	perfect_texture := rl.LoadTexture("perfect.png")
 	carpet_texture  := rl.LoadTexture("carpet.png")
-	icon_image      := rl.LoadImage("Icon.png")
-	rl.SetWindowIcon(icon_image)
+	when ODIN_OS == .Windows {
+		icon_image      := rl.LoadImage("Icon.png")
+		rl.SetWindowIcon(icon_image)
+	}
 	load_menu_resources(&gui_state)
 
 	make_network(&game)
@@ -394,9 +413,7 @@ main :: proc() {
 		if rl.IsKeyPressed(.EQUAL) do do_zoom(&game, &window, .zoom_in)
 		if rl.IsKeyPressed(.MINUS) do do_zoom(&game, &window, .zoom_out)
 		if game.game_won {
-
 			game.win_timer += rl.GetFrameTime()
-			// game.win_ticker += 1
 			if game.win_timer >= 1 && rl.IsMouseButtonPressed(.LEFT) do game.hide_win_message = true
 		}
 
@@ -411,14 +428,17 @@ main :: proc() {
 		mouse_coord: Coord = {
 			i32(math.floor(mouse_coord_float.x)),
 			i32(math.floor(mouse_coord_float.y)),
-		} //floor only needed for mouse values less than zero
+		}
 		cursor_in_puzzle :=
 			mouse_coord.x >= 0 &&
 			mouse_coord.x < game.width &&
 			mouse_coord.y >= 0 &&
 			mouse_coord.y < game.height
 
-		if (!game.game_won || !Game_Started) && cursor_in_puzzle && !gui_state.help{
+		gui_busy := gui_state.help || gui_state.all_terminals_message
+
+
+		if (!game.game_won || !Game_Started) && cursor_in_puzzle && !gui_busy{
 			idx := mouse_coord.y * game.width + mouse_coord.x
 			if rl.IsMouseButtonPressed(.MIDDLE) || rl.IsKeyPressed(.SPACE) {
 				game.tiles[idx].fixed = !game.tiles[idx].fixed
@@ -436,8 +456,14 @@ main :: proc() {
 				move_made = true
 			}
 
-			if move_made && check_win(game) && Game_Started {
-				game.game_won = true
+			if move_made && Game_Started {
+				if check_win(game) {
+					game.game_won = true
+					rl.SetTargetFPS(0)
+				} else if check_terminals(game) && !game.all_terminals_used{
+					game.all_terminals_used = true
+					gui_state.all_terminals_message = true
+				}
 			}
 
 			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, {0, 0, 255, 64})
@@ -450,7 +476,6 @@ main :: proc() {
 				rl.DrawLineEx({x * TW, 0} + 0.5, {x * TW, f32(game.height * TH)} + 0.5, 1, {128, 128, 128, 48})
 			}
 		}
-
 
 		for y: i32 = 0; y < game.height; y += 1 {
 			for x: i32 = 0; x < game.width; x += 1 {
@@ -475,13 +500,23 @@ main :: proc() {
 				pipe_rect := Rect{f32(pipe_coord.x) * TW, f32(pipe_coord.y) * TH, TW, TH}
 				tile_rect := Rect{f32(tile_coord.x) * TW, f32(tile_coord.y) * TH, TW, TH}
 
+				position: Vec2 = {f32(x) * TW, f32(y) * TH}
 				if !game.game_won && game.tiles[idx].fixed {
 					rl.DrawRectangle(x * TW, y * TH, TW, TH, {64, 64, 128, 128})
+
 				}
-				position: Vec2 = {f32(x) * TW, f32(y) * TH}
 				rl.DrawTextureRec(tilemap_texture, pipe_rect, position, rl.WHITE)
 				rl.DrawTextureRec(tilemap_texture, tile_rect, position, rl.WHITE)
+				// if game.tiles[idx].fixed || game.game_won {
+				// 	zip_tie_coord := ConnectionTilemapCoords[connection] + {8,0}
+				// 	zip_tie_rect := Rect{f32(zip_tie_coord.x) * TW, f32(zip_tie_coord.y) * TH, TW, TH}
+				// 	rl.DrawTextureRec(tilemap_texture, zip_tie_rect, position, rl.WHITE)
+				// }
 			}
+		}
+
+		if game.all_terminals_used {
+
 		}
 
 		if game.game_won && !game.hide_win_message {
@@ -490,11 +525,15 @@ main :: proc() {
 
 			x: i32 = i32(f32(game.width) * TW / 2.0 - f32(nice_texture.width) / 2.0 + win_offset)
 			y: i32 = (game.height * TH / 2) - nice_texture.height / 2
-			if game.moves == game.target_moves {
+			if game.moves <= game.target_moves {
 				y -= perfect_texture.height / 2
 				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
 			}
 			rl.DrawTexture(nice_texture, x, y, rl.WHITE)
+			if !game.win_message_complete && win_offset == 0 {
+				game.win_message_complete = true
+				rl.SetTargetFPS(30)
+			}
 		}
 
 		// rl.DrawFPS(0, 0)
