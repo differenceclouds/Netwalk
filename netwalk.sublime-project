@@ -37,7 +37,7 @@
 		},
 		{
 			"name": "odin_build_win_release",
-			"cmd": "odin build . -subsystem:windows -o:speed"
+			"shell_cmd": "odin build . -subsystem:windows -o:speed && rcedit Netwalk.exe --set-icon ./assets/Icon.ico"
 		}
 
 	],
