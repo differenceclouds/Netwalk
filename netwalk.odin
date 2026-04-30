@@ -382,10 +382,15 @@ do_zoom :: proc(game: ^Game, window: ^Window, action: ZoomAction) {
 	set_window(window, game)
 }
 
+//use with #load
 texture_from_memory :: proc(data: []byte) -> rl.Texture2D {
 	img := rl.LoadImageFromMemory(".png", raw_data(data), i32(len(data)))
 	defer rl.UnloadImage(img)
 	return rl.LoadTextureFromImage(img)
+}
+//use with #load
+image_from_memory :: proc(data: []byte) -> rl.Image {
+	return rl.LoadImageFromMemory(".png", raw_data(data), i32(len(data)))
 }
 
 main :: proc() {
@@ -407,14 +412,16 @@ main :: proc() {
 	perfect_texture := texture_from_memory(#load("./assets/perfect.png"))
 	carpet_texture  := texture_from_memory(#load("./assets/carpet.png"))
 
+
 	// tilemap_texture := rl.LoadTexture("tilemap3.png")
 	// nice_texture    := rl.LoadTexture("win.png")
 	// perfect_texture := rl.LoadTexture("perfect.png")
 	// carpet_texture  := rl.LoadTexture("carpet.png")
 	
 	when ODIN_OS == .Windows {
-		icon_image      := rl.LoadImage("Icon.png")
+		icon_image := image_from_memory(#load("./assets/Icon.png"))
 		rl.SetWindowIcon(icon_image)
+		rl.UnloadImage(icon_image)
 	}
 	load_menu_resources(&gui_state)
 
