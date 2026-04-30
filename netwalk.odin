@@ -382,6 +382,12 @@ do_zoom :: proc(game: ^Game, window: ^Window, action: ZoomAction) {
 	set_window(window, game)
 }
 
+texture_from_memory :: proc(data: []byte) -> rl.Texture2D {
+	img := rl.LoadImageFromMemory(".png", raw_data(data), i32(len(data)))
+	defer rl.UnloadImage(img)
+	return rl.LoadTextureFromImage(img)
+}
+
 main :: proc() {
 	game: Game
 	window: Window
@@ -396,10 +402,16 @@ main :: proc() {
 	set_window(&window, &game)
 	rl.SetTargetFPS(window.fps)
 
-	tilemap_texture := rl.LoadTexture("tilemap3.png")
-	nice_texture    := rl.LoadTexture("win.png")
-	perfect_texture := rl.LoadTexture("perfect.png")
-	carpet_texture  := rl.LoadTexture("carpet.png")
+	tilemap_texture := texture_from_memory(#load("./assets/tilemap3.png"))
+	nice_texture    := texture_from_memory(#load("./assets/win.png"))
+	perfect_texture := texture_from_memory(#load("./assets/perfect.png"))
+	carpet_texture  := texture_from_memory(#load("./assets/carpet.png"))
+
+	// tilemap_texture := rl.LoadTexture("tilemap3.png")
+	// nice_texture    := rl.LoadTexture("win.png")
+	// perfect_texture := rl.LoadTexture("perfect.png")
+	// carpet_texture  := rl.LoadTexture("carpet.png")
+	
 	when ODIN_OS == .Windows {
 		icon_image      := rl.LoadImage("Icon.png")
 		rl.SetWindowIcon(icon_image)

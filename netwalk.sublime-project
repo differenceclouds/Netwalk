@@ -16,7 +16,8 @@
 		{
 			"name": "odin_run_debug",
 			// "shell_cmd": "odin run . -debug",
-			"shell_cmd": "odin run . -debug",
+			"cmd": ["odin", "run", "."],
+			"shell": false,
 			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
 		},
 		{
