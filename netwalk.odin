@@ -361,7 +361,9 @@ set_window_size :: proc(window: ^Window, game: ^Game) {
 		fps           = 30,
 		control_flags = rl.ConfigFlags{ },
 	}
-
+	when ODIN_OS == .Windows {
+		window.control_flags += .WINDOW_HIGHDPI
+	}
 }
 
 ZoomAction :: enum {
