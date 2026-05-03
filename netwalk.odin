@@ -219,7 +219,7 @@ scramble_tile :: proc(connection: Connection) -> (Connection, i32) {
 	}
 	new_cardinality := ConnectionCardinality[new_connection]
 	difference := (i32(new_cardinality) - i32(init_cardinality)) %% 4
-	if difference == 3 do difference = 1
+	if difference == 3 do difference = 1 //three CW = one CCW, vice versa. probably some way to do this with negatives and absolute value but whatever
 
 	return new_connection, difference
 }
@@ -360,9 +360,6 @@ set_window_size :: proc(window: ^Window, game: ^Game) {
 		height        = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
 		fps           = 30,
 		control_flags = rl.ConfigFlags{ },
-	}
-	when ODIN_OS == .Windows {
-		window.control_flags += .WINDOW_HIGHDPI
 	}
 }
 
