@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta name="robots" content="index,follow" />
+<meta name="description" content="Play netwalk online in your browser." />
+<title>Daily Expert Netwalk</title>
+<link rel="stylesheet" type="text/css" href="/css/divs.css" />
+<style type="text/css">
+td {
+	text-align: center;
+}
+td.tools {
+	vertical-align: top;
+}
+table.toolbox tr td {
+	border-width: medium thin;
+	border-color: #B4D0DC;
+	border-style: solid;
+	padding: 1px 1px;
+	background-color: #ECF8FF;
+}
+</style>
+<script type="text/javascript">
+var width = 9;
+var height = 9;
+var puzzle = "a266453bc437c6b69a3c3ba39314cab453a1baaec599e3B7e619aa52652abaa656615c5ce2acab42c";
+var token = "e8ff400aa48cf012";
+var curpuz = puzzle;
+function puzzleDone() { recordScore(); }
+var showTimes = false;
+function toggleTable() {
+	document.getElementById('timetable').style.display = showTimes?"none":"inline";
+	showTimes = !showTimes;
+	document.getElementById('movetable').style.display = showTimes?"none":"block";
+	document.getElementById('toggle').innerHTML = "Show " + (showTimes?"Moves":"Times");
+	return false;
+}
+</script>
+<script type="text/javascript" src="netwalk.js"></script>
+<script>
+document.onkeypress = keyPressed;
+</script>
+</head>
+<body onload="initNetwalkGrid()"><div id="wrapper">
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-84732097-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<div id="header">
+<div style="float: right;">
+<script type="text/javascript"><!--
+google_ad_client = "pub-9758454760750045";
+google_ad_slot = "9673446379";
+google_ad_width = 468;
+google_ad_height = 60;
+//--></script>
+<script type="text/javascript" src="https://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+<a href="/"><img src="/images/logicgamesonline-rect.png" alt="Logic Games Online" /></a>
+</div>
+<div id="middle">
+<div id="navbar">
+<ul class="toplevel">
+<li><a href="/">Logic Games Online</a></li>
+<li><a href="/sudoku/">Sudoku</a><!-- /li -->
+<ul class="sublevel">
+<li><a href="/sudoku/">Play Sudoku</a></li>
+<li><a href="/sudoku/daily.php">Daily Extreme Sudoku</a></li>
+<li><a href="/sudoku/tutorial.html">Sudoku Tutorial</a></li>
+<li><a href="/sudoku/entry.php">Sudoku Solver</a></li>
+</ul></li>
+<li><a href="/nurikabe/">Nurikabe</a><!-- /li -->
+<ul class="sublevel">
+<li><a href="/nurikabe/">Play 5x5 Nurikabe</a></li>
+<li><a href="/nurikabe/daily.php">Daily 9x9 Nurikabe</a></li>
+<li><a href="/nurikabe/archive.php">Nurikabe Archive</a></li>
+<li><a href="/nurikabe/tutorial.html">Nurikabe Tutorial</a></li>
+</ul></li>
+<li><a href="/netwalk/">Netwalk</a><!-- /li -->
+<ul class="sublevel">
+<li><a href="/netwalk/">Play Netwalk</a></li>
+<li><a href="/netwalk/daily.php">Daily Expert Netwalk</a></li>
+<li><a href="/netwalk/tutorial.html">Netwalk Tutorial</a></li>
+</ul></li>
+<li><a href="/lightsout/">LightsOut</a><!-- /li -->
+<ul class="sublevel">
+<li><a href="/lightsout/">Play 5x5 LightsOut</a></li>
+<li><a href="/lightsout/daily.php">Daily 9x9 LightsOut</a></li>
+<li><a href="/lightsout/tutorial.html">LightsOut Tutorial</a></li>
+</ul></li>
+<li><a href="/tenpair/">TenPair</a><!-- /li -->
+<ul class="sublevel">
+<li><a href="/tenpair/">Play TenPair</a></li>
+</ul></li>
+</ul>
+</div>
+<div id="main"><center>
+<h1>Daily Expert Netwalk</h1>
+<!-- p>New: participate in our <a href="/polls/results.php">2008 Presidential election poll</a> after completing the daily Netwalk.</p -->
+<p><a href="/netwalk/?g=Expert">Play more Expert level Netwalk</a>
+<div id="container">
+<table><tr><td class="tools">
+<input type="button" value="Try Again" onclick="window.location='/netwalk/daily.php'" />
+<br />
+<br />
+<script type="text/javascript"><!--
+google_ad_client = "pub-9758454760750045";
+google_ad_slot = "7318615866";
+google_ad_width = 125;
+google_ad_height = 125;
+//--></script>
+<script type="text/javascript" src="https://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+
+<p><a id="toggle" href="#" onclick="return toggleTable()">Show Times</a></p>
+<table id="movetable" class="toolbox" style="display:block" width="100%">
+<tr>
+<td style="padding: 0px; font-size: large; background-color: #B4D0DC;">Best Scores</td>
+</tr>
+<tr><td>67</td></tr>
+<tr><td>69</td></tr>
+<tr><td>71</td></tr>
+<tr><td>75</td></tr>
+<tr><td>77</td></tr>
+<tr><td>97</td></tr>
+<tr><td>135</td></tr>
+<tr><td>157</td></tr>
+</table>
+<table id="timetable" class="toolbox" style="display:none" width="100%">
+<tr>
+<td style="padding: 0px; font-size: large; background-color: #B4D0DC;">Best Times</td>
+</tr>
+<tr><td>0:55</td></tr>
+<tr><td>1:16</td></tr>
+<tr><td>1:18</td></tr>
+<tr><td>1:22</td></tr>
+<tr><td>1:22</td></tr>
+<tr><td>1:22</td></tr>
+<tr><td>1:32</td></tr>
+<tr><td>1:35</td></tr>
+<tr><td>1:38</td></tr>
+<tr><td>1:42</td></tr>
+</table>
+</td>
+<td style="width: 20px;">&nbsp;</td>
+<td colspan="2" id="contain"></td>
+</tr>
+<tr><td></td><td></td>
+<td id="moves">Moves: 0</td>
+<td id="timer">Time 0:00</td></tr>
+</table>
+
+<!-- form name="poll" style="visibility: hidden;" method="GET" action="/polls/poll.php">
+</form -->
+
+</div>
+<div id="explain">
+
+<!-- google_ad_section_start -->
+
+<p>In the game of Netwalk, you are a network administrator, and someone has
+scrambled your network.  Your job is to rotate all the pieces so that every
+computer is connected to the server by pipes and there are no loose ends in your
+network.  Of course, the less work you need to do to complete your network the
+better, so Netwalk is scored by the number of clicks it takes you to rotate
+everything into place.</p>
+<p>Left click to rotate a tile counter-clockwise, and right click to rotate a
+tile clockwise.</p>
+<p>When you are certain of a tile's orientation, press the spacebar with the
+mouse cursor over that tile.  The background will turn blue and you won't be
+able to accidentally rotate it without toggling the background again.  This
+also helps you to see which tiles you still need to work on.  In some browsers,
+clicking the tile with the mouse wheel will give the same result.</p>
+<p>The different difficulties correspond to different sizes, with Beginner
+being 5x5, Medium 7x7, and Expert 9x9, with the added difficulty in expert
+that connections can wrap from left to right and from top to bottom.</p>
+<p>Find useful tips for solving Netwalk puzzles in our
+<a href="tutorial.html">Netwalk tutorial</a>.</p>
+
+<!-- google_ad_section_end -->
+
+</div>
+</center></div>
+	</div>
+	<div id="footer">
+		&copy; 2005-2019<a href="/jdmetz/">Josh Metzler</a>
+		&mdash; <a href="/contactus.html">Contact Us</a>
+		&mdash; <a href="/changelog.html">Changelog</a>
+		&mdash; <a href="/privacy.html">Privacy</a>
+	</div>
+
+</div>
+</body>
+</html>

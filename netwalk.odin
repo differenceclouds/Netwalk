@@ -53,7 +53,7 @@ GameSize :: [GameDifficulty]Coord {
 	.Expert       = {9, 9},
 }
 
-GamePadded :: [GameDifficulty]bool {
+GameIsPadded :: [GameDifficulty]bool {
 	.Beginner     = true,
 	.Intermediate = true,
 	.Expert       = false,
@@ -77,7 +77,6 @@ Game :: struct {
 
 	win_timer:                          f32,
 	win_message_complete:               bool,
-	// win_ticker:                         uint,
 }
 
 TileData :: struct {
@@ -126,6 +125,7 @@ ConnectionCardinality := map[Connection]Cardinal {
 	{.E, .S, .W} = .E,
 	{.N, .S, .W} = .S,
 	{.N, .E, .W} = .W,
+	{.N, .E, .S, .W} = nil,
 }
 
 make_network :: proc(game: ^Game) {
@@ -398,7 +398,7 @@ main :: proc() {
 	window: Window
 	gui_state: GuiState
 
-	make_game(&game, GameSize[.Expert], {}, GamePadded[.Expert])
+	make_game(&game, GameSize[.Expert], {}, GameIsPadded[.Expert])
 	// scramble_puzzle(&game)
 	set_window_size(&window, &game)
 	rl.ChangeDirectory(rl.GetApplicationDirectory())
@@ -423,7 +423,7 @@ main :: proc() {
 		rl.SetWindowIcon(icon_image)
 		rl.UnloadImage(icon_image)
 	}
-	load_menu_resources(&gui_state)
+	if !load_menu_resources(&gui_state) do panic("no style!!!!!!")
 
 	make_network(&game)
 

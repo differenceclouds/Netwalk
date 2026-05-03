@@ -5,10 +5,10 @@
 			"path": ".",
 		},
 		{
-			"path": "/Users/Radagast/Odin/core",
+			"path": "~/Odin/core",
 		},
 		{
-			"path": "/Users/Radagast/Odin/vendor"
+			"path": "~/Odin/vendor"
 		},
 	],
 	"build_systems":
@@ -21,13 +21,20 @@
 			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
 		},
 		{
+			"name": "odin_run_debug_old",
+			// "shell_cmd": "odin run . -debug",
+			"cmd": ["odin", "run", "."],
+			"shell": false,
+			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+		},
+		{
 			"name": "odin_run_keep_debug",
 			"shell_cmd": "odin run . -keep-executable -debug",
 			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
 		},
 		{
 			"name": "odin_build_release",
-			"shell_cmd": "odin build . -o:speed -vet -strict-style",
+			"cmd": ["odin", "build", ".", "-o:speed", "-vet", "-strict-style"],
 			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
 		},
 		{

@@ -1,12 +1,24 @@
 package Netwalk
 
 import "core:fmt"
+import "core:os"
 import rl "vendor:raylib"
 
 
-load_menu_resources :: proc(gui_state: ^GuiState) {
-	rl.GuiLoadStyle("style_terminal.rgs")
+load_menu_resources :: proc(gui_state: ^GuiState) -> bool {
+	style_terminal_data :: #load("./assets/style_terminal.rgs")
+
+	tmp_path :: "/tmp/embedded_style.rgs"
+	err := os.write_entire_file(tmp_path, style_terminal_data)
+	if err != nil {
+		fmt.eprintln("Failed to write temp style file")
+		return false
+	}
+
+	rl.GuiLoadStyle(tmp_path)
+	os.remove(tmp_path)
 	gui_state.help = true
+	return true
 }
 
 GuiState :: struct {
@@ -18,20 +30,7 @@ GuiState :: struct {
 UNIT :: 20
 BUTTON_WIDTH :: 80
 PAD :: 2
-
-
-// new_game_button :: proc(game: ^Game, gui_state: ^GuiState, window: ^Window, difficulty: GameDifficulty) {
-	
-// 	make_game(game, GameSize[difficulty], {}, GamePadded[difficulty])
-// 	Game_Started = true
-// 	scramble_puzzle(game)
-// 	// new_game_pressed = true
-// 	gui_state.help = false
-// 	set_window(window, game)
-// 	make_network(game)
-// }
-
-Menu_Height:f32= UNIT + 4
+Menu_Height:f32
 
 draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	x: f32 = UNIT
@@ -62,7 +61,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 
 
 	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Beginner") {
-		make_game(game, GameSize[.Beginner], {}, GamePadded[.Beginner])
+		make_game(game, GameSize[.Beginner], {}, GameIsPadded[.Beginner])
 		Game_Started = true
 		scramble_puzzle(game)
 		new_game_pressed = true
@@ -70,7 +69,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	}
 	x += BUTTON_WIDTH + PAD
 	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Intermediate") {
-		make_game(game, GameSize[.Intermediate], {}, GamePadded[.Intermediate])
+		make_game(game, GameSize[.Intermediate], {}, GameIsPadded[.Intermediate])
 		Game_Started = true
 		scramble_puzzle(game)
 		new_game_pressed = true
@@ -78,7 +77,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	}
 	x += BUTTON_WIDTH + PAD
 	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Expert") {
-		make_game(game, GameSize[.Expert], {}, GamePadded[.Expert])
+		make_game(game, GameSize[.Expert], {}, GameIsPadded[.Expert])
 		Game_Started = true
 		scramble_puzzle(game)
 		new_game_pressed = true
