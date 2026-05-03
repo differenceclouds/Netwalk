@@ -2,21 +2,25 @@ package Netwalk
 
 import "core:fmt"
 import "core:os"
+import "core:path/filepath"
 import rl "vendor:raylib"
 
 
 load_menu_resources :: proc(gui_state: ^GuiState) -> bool {
 	style_terminal_data :: #load("./assets/style_terminal.rgs")
-
-	tmp_path :: "/tmp/embedded_style.rgs"
+	when ODIN_OS == .Windows {
+		tmp_path, ok := filepath.join({os.get_env("TEMP", context.temp_allocator), "embedded_style.rgs"}, context.temp_allocator)
+	} else {
+		tmp_path := "/tmp/embedded_style.rgs"
+	}
 	err := os.write_entire_file(tmp_path, style_terminal_data)
 	if err != nil {
 		fmt.eprintln("Failed to write temp style file")
 		return false
 	}
 
-	rl.GuiLoadStyle(tmp_path)
-	os.remove(tmp_path)
+	rl.GuiLoadStyle(fmt.ctprint(tmp_path))
+	os.remove(tmp_path)  
 	gui_state.help = true
 	return true
 }
