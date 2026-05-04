@@ -310,7 +310,7 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 			puzzle_data = generate_puzzle(size, pad)
 		} else {
 			Attempt_Average_Counter += 1
-			MAX_ATTEMPTS :: 150
+			MAX_ATTEMPTS :: 100
 			for i in 1 ..= MAX_ATTEMPTS {
 				puzzle_data = generate_puzzle(size, pad)
 				if !check_four_ways(puzzle_data, 0) {
@@ -403,6 +403,7 @@ main :: proc() {
 	rl.ChangeDirectory(rl.GetApplicationDirectory())
 	rl.ChangeDirectory("assets")
 	rl.InitWindow(window.width, window.height, window.name)
+	defer rl.CloseWindow()
 	set_window(&window, &game)
 	rl.SetTargetFPS(window.fps)
 
