@@ -76,7 +76,7 @@ Game :: struct {
 	target_moves:                       i32,
 
 	win_timer:                          f32,
-	win_message_complete:               bool,
+	win_graphic_complete:               bool,
 }
 
 TileData :: struct {
@@ -310,7 +310,7 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 			puzzle_data = generate_puzzle(size, pad)
 		} else {
 			Attempt_Average_Counter += 1
-			MAX_ATTEMPTS :: 100
+			MAX_ATTEMPTS :: 150
 			for i in 1 ..= MAX_ATTEMPTS {
 				puzzle_data = generate_puzzle(size, pad)
 				if !check_four_ways(puzzle_data, 0) {
@@ -337,7 +337,10 @@ make_game :: proc(game: ^Game, size: Coord, puzzle: []PipeData = {}, pad := fals
 			game.tiles[i].tile_type = tile_data.tile
 		}
 	}
+
 }
+
+
 
 set_window :: proc(window: ^Window, game: ^Game) {
 	set_window_size(window, game)
@@ -355,7 +358,7 @@ set_window_size :: proc(window: ^Window, game: ^Game) {
 	}
 	game^.camera.offset.y = (Menu_Height)
 	window^ = Window {
-		name          = "NETWALK",
+		name          = "NETADMIN",
 		width         = i32(f32(TW * game.width) * zoom + 1),
 		height        = i32(f32(TH * game.height) * zoom + 1) + i32(Menu_Height),
 		fps           = 30,
@@ -392,6 +395,12 @@ image_from_memory :: proc(data: []byte) -> rl.Image {
 	return rl.LoadImageFromMemory(".png", raw_data(data), i32(len(data)))
 }
 
+EVENT_WAITING :: false
+
+COLOR_HIGHLIGHT: rl.Color :{255, 255, 0, 32}
+COLOR_LOCKED: rl.Color :{64, 64, 128, 128}
+COLOR_LINE: rl.Color :{128, 128, 128, 48}
+
 main :: proc() {
 	game: Game
 	window: Window
@@ -413,6 +422,8 @@ main :: proc() {
 	carpet_texture  := texture_from_memory(#load("./assets/carpet.png"))
 
 
+	when EVENT_WAITING do rl.EnableEventWaiting()
+
 	// tilemap_texture := rl.LoadTexture("tilemap3.png")
 	// nice_texture    := rl.LoadTexture("win.png")
 	// perfect_texture := rl.LoadTexture("perfect.png")
@@ -425,10 +436,12 @@ main :: proc() {
 	}
 	if !load_menu_resources(&gui_state) do panic("no style!!!!!!")
 
+	
+
 	make_network(&game)
 
 	for !rl.WindowShouldClose() {
-
+		
 		if rl.IsKeyPressed(.EQUAL) do do_zoom(&game, &window, .zoom_in)
 		if rl.IsKeyPressed(.MINUS) do do_zoom(&game, &window, .zoom_out)
 		if game.game_won {
@@ -437,8 +450,7 @@ main :: proc() {
 		}
 
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.BLACK)
-
+		rl.ClearBackground(gui_state.style_bg)
 		rl.BeginMode2D(game.camera)
 		rl.DrawTextureRec(carpet_texture, {0, 0, f32(window.width), f32(window.height)}, 0, rl.WHITE)
 
@@ -478,6 +490,7 @@ main :: proc() {
 			if move_made && Game_Started {
 				if check_win(game) {
 					game.game_won = true
+					when EVENT_WAITING do rl.DisableEventWaiting()
 					rl.SetTargetFPS(0)
 				} else if check_terminals(game) && !game.all_terminals_used{
 					game.all_terminals_used = true
@@ -485,14 +498,14 @@ main :: proc() {
 				}
 			}
 
-			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, {0, 0, 255, 64})
+			rl.DrawRectangle(mouse_coord.x * TW, mouse_coord.y * TH, TW, TH, COLOR_HIGHLIGHT)
 		}
 		if !game.game_won {
 			for y: f32 = 0; y <= f32(game.height); y += 1 {
-				rl.DrawLineEx({0, y * TH} + 0.5, {f32(game.width * TW), y * TH} + 0.5, 1, {128, 128, 128, 48})
+				rl.DrawLineEx({0, y * TH} + 0.5, {f32(game.width * TW), y * TH} + 0.5, 1, COLOR_LINE)
 			}
 			for x: f32 = 1; x < f32(game.width); x += 1 {
-				rl.DrawLineEx({x * TW, 0} + 0.5, {x * TW, f32(game.height * TH)} + 0.5, 1, {128, 128, 128, 48})
+				rl.DrawLineEx({x * TW, 0} + 0.5, {x * TW, f32(game.height * TH)} + 0.5, 1, COLOR_LINE)
 			}
 		}
 
@@ -521,7 +534,7 @@ main :: proc() {
 
 				position: Vec2 = {f32(x) * TW, f32(y) * TH}
 				if !game.game_won && game.tiles[idx].fixed {
-					rl.DrawRectangle(x * TW, y * TH, TW, TH, {64, 64, 128, 128})
+					rl.DrawRectangle(x * TW, y * TH, TW, TH, COLOR_LOCKED)
 
 				}
 				rl.DrawTextureRec(tilemap_texture, pipe_rect, position, rl.WHITE)
@@ -540,17 +553,18 @@ main :: proc() {
 
 		if game.game_won && !game.hide_win_message {
 
-			win_offset := max(500 - game.win_timer * 300, 0)
+			win_graphic_offset := max(500 - game.win_timer * 300, 0)
 
-			x: i32 = i32(f32(game.width) * TW / 2.0 - f32(nice_texture.width) / 2.0 + win_offset)
+			x: i32 = i32(f32(game.width) * TW / 2.0 - f32(nice_texture.width) / 2.0 + win_graphic_offset)
 			y: i32 = (game.height * TH / 2) - nice_texture.height / 2
 			if game.moves <= game.target_moves {
 				y -= perfect_texture.height / 2
 				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
 			}
 			rl.DrawTexture(nice_texture, x, y, rl.WHITE)
-			if !game.win_message_complete && win_offset == 0 {
-				game.win_message_complete = true
+			if !game.win_graphic_complete && win_graphic_offset == 0 {
+				game.win_graphic_complete = true
+				when EVENT_WAITING do rl.EnableEventWaiting()
 				rl.SetTargetFPS(30)
 			}
 		}

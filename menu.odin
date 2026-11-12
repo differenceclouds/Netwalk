@@ -5,34 +5,86 @@ import "core:os"
 import "core:path/filepath"
 import rl "vendor:raylib"
 
+GuiStyle :: enum {
+	raylib,
+	advance,
+	cyber,
+	rltech,
+	amber,
+	dark,
+	sunny,
+	ashes,
+	enefete,
+	terminal,
+	bluish,
+	genesis,
+	turbo,
+	brick,
+	jungle,
+	wisteria,
+	candy,
+	lavanda,
+	cherry,
+	pocket,
+}
+
+// GuiStyle :: enum {
+// 	terminal,
+// 	genesis,
+// 	turbo,
+// 	pocket,
+// 	raylib,
+// 	advance,
+// 	cyber,
+// 	amber,
+// 	dark,
+// 	sunny
+// }
+
 
 load_menu_resources :: proc(gui_state: ^GuiState) -> bool {
-	style_terminal_data :: #load("./assets/style_terminal.rgs")
-	when ODIN_OS == .Windows {
-		tmp_path, ok := filepath.join({os.get_env("TEMP", context.temp_allocator), "embedded_style.rgs"}, context.temp_allocator)
-	} else {
-		tmp_path := "/tmp/embedded_style.rgs"
-	}
-	err := os.write_entire_file(tmp_path, style_terminal_data)
-	if err != nil {
-		fmt.eprintln("Failed to write temp style file")
-		return false
-	}
+	gui_state.style_bg = rl.BLACK
+	gui_state.style = .genesis
 
-	rl.GuiLoadStyle(fmt.ctprint(tmp_path))
-	os.remove(tmp_path)  
+	baked_style := #load ("./assets/styles/style_genesis.rgs")
+
+	rl.GuiLoadStyleFromMemory(raw_data(baked_style), i32(len(baked_style)))
+	// rl.GuiLoadStyle(get_style_path(gui_state.style))
 	gui_state.help = true
+
 	return true
+}
+
+get_style_path :: proc(style: GuiStyle) -> cstring {
+	return fmt.ctprintf("./styles/style_%v.rgs", style)
+}
+
+switch_style :: proc(gui_state: ^GuiState) {
+	style := gui_state.style
+	style = cycle_enum(style, 1)
+	gui_state.style = style
+
+	rl.GuiLoadStyleDefault()
+	if gui_state.style != .raylib {
+		rl.GuiLoadStyle(get_style_path(gui_state.style))
+	}
+	if gui_state.style == .rltech {
+		gui_state.style_bg = rl.LIGHTGRAY
+	} else {
+		gui_state.style_bg = rl.BLACK
+	}
 }
 
 GuiState :: struct {
 	help: bool,
 	menu_expanded: bool,
 	all_terminals_message: bool,
+	style: GuiStyle,
+	style_bg: rl.Color,
 }
 
 UNIT :: 20
-BUTTON_WIDTH :: 80
+BUTTON_WIDTH :: 60
 PAD :: 2
 Menu_Height:f32
 
@@ -44,13 +96,12 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	rl.GuiUnlock()
 	rl.GuiToggle({x, y, UNIT, UNIT}, "#193#", &gui_state.help)
 	x += UNIT*1.5
+	new_game_pressed: bool
 
 
 	rl.GuiLabel({x, y, 150, UNIT}, fmt.ctprint("Moves:", game.moves, " Target:", game.target_moves))
 
 	x += 135
-
-
 
 	if game.camera.zoom < 2 {
 		x = UNIT
@@ -58,10 +109,11 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	}
 
 
+
+
 	rl.GuiLabel({x, y, 75, UNIT}, "New Game:")
 	x += 75
 
-	new_game_pressed: bool
 
 
 	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Beginner") {
@@ -72,7 +124,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		gui_state.help = false
 	}
 	x += BUTTON_WIDTH + PAD
-	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Intermediate") {
+	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Interm.") {
 		make_game(game, GameSize[.Intermediate], {}, GameIsPadded[.Intermediate])
 		Game_Started = true
 		scramble_puzzle(game)
@@ -106,7 +158,8 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	}
 	x += UNIT*2 + PAD
 
-	// rl.GuiCheckBox({x, y, UNIT, UNIT}, "Allow 4-way tiles", &Allow_Fourways)
+	rl.GuiCheckBox({x, y, UNIT, UNIT}, "Allow 4-way tiles", &Allow_Fourways)
+	x += UNIT*7
 
 	if new_game_pressed {
 		set_window(window, game)
@@ -114,29 +167,37 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	}
 
 	if gui_state.help {
-		width :: 280
-		height :: 275
-		x = f32(window.width - width) / 2.0
+		width := f32(rl.GuiGetTextWidth("There will be no unused connections, and    "))
+		height :: 340
+		x = f32(window.width - i32(width)) / 2.0
 		y = f32(window.height - height) / 2.0
 		// rl.GuiTextBox({x, y, width, height}, "heee", 10, false)
-		if rl.GuiWindowBox({x, y, width, height}, "About Netwalk") != 0 {
+		if rl.GuiWindowBox({x, y, width, height}, "About Netadmin") != 0 {
 			gui_state.help = false
+		}
+
+		style_button_text := fmt.ctprint(gui_state.style)
+		style_button_width := rl.GuiGetTextWidth(style_button_text) + UNIT
+		if rl.GuiButton({x + width - f32(style_button_width) - UNIT - 4, y + 2, f32(style_button_width), UNIT}, style_button_text) {
+			switch_style(gui_state)
 		}
 
 		y += 23
 		rl.GuiLock()
-
 		help_text: cstring :
 `Connect all terminals to the server!
-There will be no unused connections, and no
-loops. (Nearly) every puzzle can be completed
-in target number of moves without guessing.
-Expert puzzles loop at each edge.
+There will be no unused connections, and
+no loops. (Nearly) every puzzle can be
+completed in target number of moves
+without guessing. (Most) puzzles have
+one unique solution. Expert puzzles wrap
+at each edge (toroidal). Lock Tile
+feature is advised for Expert puzzles.
 
 Controls:
-rotate  tile: left click / right click
-lock tile: middle click / spacebar
-set game scale: - / +`
+Rotate Tile: left click / right click
+Lock Tile: middle click | spacebar
+Set game scale: - / +`
 		rl.GuiTextBox({x, y, width, height - 23}, help_text, 10, false)
 		rl.GuiUnlock()
 	}
