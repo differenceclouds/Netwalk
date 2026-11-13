@@ -5,10 +5,13 @@
 			"path": ".",
 		},
 		{
-			"path": "~/Odin/core",
+			"path": "/Users/arxi/Odin/core",
 		},
 		{
-			"path": "~/Odin/vendor"
+			"path": "/Users/arxi/Odin/vendor",
+		},
+		{
+			"path": "/Users/arxi/odin-projects/raygui_helpers"
 		},
 	],
 	"build_systems":
@@ -42,7 +45,7 @@
 		},
 		{
 			"name": "odin_build_win_release",
-			"shell_cmd": "odin build . -subsystem:windows -o:speed && rcedit Netwalk.exe --set-icon ./assets/Icon.ico"
+			"shell_cmd": "odin build . -subsystem:windows -o:speed && rcedit Netwalk.exe --set-icon ./assets/Icon.ico",
 		}
 
 	],

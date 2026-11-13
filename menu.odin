@@ -4,70 +4,25 @@ import "core:fmt"
 import "core:os"
 import "core:path/filepath"
 import rl "vendor:raylib"
-
-GuiStyle :: enum {
-	raylib,
-	advance,
-	cyber,
-	rltech,
-	amber,
-	dark,
-	sunny,
-	ashes,
-	enefete,
-	terminal,
-	bluish,
-	genesis,
-	turbo,
-	brick,
-	jungle,
-	wisteria,
-	candy,
-	lavanda,
-	cherry,
-	pocket,
-}
-
-// GuiStyle :: enum {
-// 	terminal,
-// 	genesis,
-// 	turbo,
-// 	pocket,
-// 	raylib,
-// 	advance,
-// 	cyber,
-// 	amber,
-// 	dark,
-// 	sunny
-// }
-
+import rg "../raygui_helpers"
 
 load_menu_resources :: proc(gui_state: ^GuiState) -> bool {
 	gui_state.style_bg = rl.BLACK
 	gui_state.style = .genesis
 
-	baked_style := #load ("./assets/styles/style_genesis.rgs")
-
-	rl.GuiLoadStyleFromMemory(raw_data(baked_style), i32(len(baked_style)))
-	// rl.GuiLoadStyle(get_style_path(gui_state.style))
+	rg.switch_style(gui_state.style)
 	gui_state.help = true
 
 	return true
 }
 
-get_style_path :: proc(style: GuiStyle) -> cstring {
-	return fmt.ctprintf("./styles/style_%v.rgs", style)
-}
-
-switch_style :: proc(gui_state: ^GuiState) {
+cycle_style :: proc(gui_state: ^GuiState) {
 	style := gui_state.style
 	style = cycle_enum(style, 1)
 	gui_state.style = style
 
-	rl.GuiLoadStyleDefault()
-	if gui_state.style != .raylib {
-		rl.GuiLoadStyle(get_style_path(gui_state.style))
-	}
+	rg.switch_style(gui_state.style)
+
 	if gui_state.style == .rltech {
 		gui_state.style_bg = rl.LIGHTGRAY
 	} else {
@@ -79,7 +34,7 @@ GuiState :: struct {
 	help: bool,
 	menu_expanded: bool,
 	all_terminals_message: bool,
-	style: GuiStyle,
+	style: rg.GuiStyle,
 	style_bg: rl.Color,
 }
 
@@ -179,7 +134,7 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		style_button_text := fmt.ctprint(gui_state.style)
 		style_button_width := rl.GuiGetTextWidth(style_button_text) + UNIT
 		if rl.GuiButton({x + width - f32(style_button_width) - UNIT - 4, y + 2, f32(style_button_width), UNIT}, style_button_text) {
-			switch_style(gui_state)
+			cycle_style(gui_state)
 		}
 
 		y += 23
