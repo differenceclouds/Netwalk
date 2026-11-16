@@ -43,6 +43,14 @@ BUTTON_WIDTH :: 60
 PAD :: 2
 Menu_Height:f32
 
+
+start_game :: proc(game: ^Game, gui_state: ^GuiState, difficulty: GameDifficulty) {
+	make_game(game, GameSize[difficulty], {}, GameIsPadded[difficulty])
+	Game_Started = true
+	scramble_puzzle(game)
+	gui_state.help = false
+}
+
 draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 	x: f32 = UNIT
 	// y: f32 = f32(game.height) * TH * game.camera.zoom
@@ -63,38 +71,18 @@ draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {
 		y += UNIT + PAD
 	}
 
-
-
-
 	rl.GuiLabel({x, y, 75, UNIT}, "New Game:")
 	x += 75
 
+	for d in GameDifficulty {
+		if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, DifficultyString[d]) {
+			start_game(game, gui_state, d)
+			new_game_pressed = true
+		}
+		x += BUTTON_WIDTH + PAD
+	}
 
-
-	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Beginner") {
-		make_game(game, GameSize[.Beginner], {}, GameIsPadded[.Beginner])
-		Game_Started = true
-		scramble_puzzle(game)
-		new_game_pressed = true
-		gui_state.help = false
-	}
-	x += BUTTON_WIDTH + PAD
-	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Interm.") {
-		make_game(game, GameSize[.Intermediate], {}, GameIsPadded[.Intermediate])
-		Game_Started = true
-		scramble_puzzle(game)
-		new_game_pressed = true
-		gui_state.help = false
-	}
-	x += BUTTON_WIDTH + PAD
-	if rl.GuiButton({x, y, BUTTON_WIDTH, UNIT}, "Expert") {
-		make_game(game, GameSize[.Expert], {}, GameIsPadded[.Expert])
-		Game_Started = true
-		scramble_puzzle(game)
-		new_game_pressed = true
-		gui_state.help = false
-	}
-	x += BUTTON_WIDTH + UNIT
+	x += UNIT - PAD
 
 	if game.camera.zoom < 2 {
 		x = UNIT

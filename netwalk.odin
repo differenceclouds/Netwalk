@@ -47,13 +47,19 @@ GameDifficulty :: enum {
 	Expert,
 }
 
-GameSize :: [GameDifficulty]Coord {
+DifficultyString := [GameDifficulty]cstring {
+	.Beginner = "Beginner",
+	.Intermediate = "Interm.",
+	.Expert = "Expert"
+}
+
+GameSize := [GameDifficulty]Coord {
 	.Beginner     = {7, 7},
 	.Intermediate = {9, 9},
 	.Expert       = {9, 9},
 }
 
-GameIsPadded :: [GameDifficulty]bool {
+GameIsPadded := [GameDifficulty]bool {
 	.Beginner     = true,
 	.Intermediate = true,
 	.Expert       = false,
