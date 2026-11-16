@@ -46,9 +46,12 @@ Menu_Height:f32
 
 start_game :: proc(game: ^Game, gui_state: ^GuiState, difficulty: GameDifficulty) {
 	make_game(game, GameSize[difficulty], {}, GameIsPadded[difficulty])
+	game.difficulty = difficulty
 	Game_Started = true
-	scramble_puzzle(game)
+	// scramble_puzzle(game)
 	gui_state.help = false
+
+	set_render_texture(game)
 }
 
 draw_menu :: proc(game: ^Game, window: ^Window, gui_state: ^GuiState) {

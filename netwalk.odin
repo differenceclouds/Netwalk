@@ -74,6 +74,8 @@ Game :: struct {
 	all_terminals_used:                 bool,
 	hide_win_message:                   bool,
 
+	difficulty:                         GameDifficulty,
+
 	//following only used for move counter
 	last_rotated_tile:                  i32,
 	initial_state_of_last_rotated_tile: Connection,
@@ -83,6 +85,9 @@ Game :: struct {
 
 	win_timer:                          f32,
 	win_graphic_complete:               bool,
+
+	render_texture:                     rl.RenderTexture2D,
+	render_texture_pos:                 Vec2,
 }
 
 TileData :: struct {
@@ -361,6 +366,10 @@ set_window_size :: proc(window: ^Window, game: ^Game) {
 	}
 }
 
+set_render_texture :: proc(game: ^Game) {
+	game.render_texture = rl.LoadRenderTexture(TW * game.width, TH * game.height)
+}
+
 ZoomAction :: enum {
 	zoom_reset,
 	zoom_in,
@@ -447,7 +456,7 @@ main :: proc() {
 		rl.BeginDrawing()
 		rl.ClearBackground(gui_state.style_bg)
 		rl.BeginMode2D(game.camera)
-		rl.DrawTextureRec(carpet_texture, {0, 0, f32(window.width), f32(window.height)}, 0, rl.WHITE)
+		rl.DrawTextureRec(carpet_texture, {game.render_texture_pos.x, -game.render_texture_pos.y, f32(window.width), f32(window.height)}, 0, rl.WHITE)
 
 		mouse_position := rl.GetScreenToWorld2D(rl.GetMousePosition(), game.camera)
 		mouse_coord_float := mouse_position / {TW, TH}
@@ -486,7 +495,7 @@ main :: proc() {
 				if check_win(game) {
 					game.game_won = true
 					when EVENT_WAITING do rl.DisableEventWaiting()
-					rl.SetTargetFPS(0)
+					// rl.SetTargetFPS(0)
 				} else if check_terminals(game) && !game.all_terminals_used{
 					game.all_terminals_used = true
 					gui_state.all_terminals_message = true
@@ -502,6 +511,11 @@ main :: proc() {
 			for x: f32 = 1; x < f32(game.width); x += 1 {
 				rl.DrawLineEx({x * TW, 0} + 0.5, {x * TW, f32(game.height * TH)} + 0.5, 1, COLOR_LINE)
 			}
+		}
+
+		if game.game_won {
+			// rl.EndMode
+			rl.BeginTextureMode(game.render_texture)
 		}
 
 		for y: i32 = 0; y < game.height; y += 1 {
@@ -542,25 +556,42 @@ main :: proc() {
 			}
 		}
 
-		if game.all_terminals_used {
+		if game.game_won {
 
-		}
-
-		if game.game_won && !game.hide_win_message {
-
-			win_graphic_offset := max(500 - game.win_timer * 300, 0)
-
-			x: i32 = i32(f32(game.width) * TW / 2.0 - f32(nice_texture.width) / 2.0 + win_graphic_offset)
-			y: i32 = (game.height * TH / 2) - nice_texture.height / 2
-			if game.moves <= game.target_moves {
-				y -= perfect_texture.height / 2
-				rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
+			rl.EndTextureMode()
+			render_rect_src := rl.Rectangle {
+				game.render_texture_pos.x,
+				game.render_texture_pos.y,
+				f32(game.width * TW),
+				-f32(game.height * TH),
 			}
-			rl.DrawTexture(nice_texture, x, y, rl.WHITE)
-			if !game.win_graphic_complete && win_graphic_offset == 0 {
-				game.win_graphic_complete = true
-				when EVENT_WAITING do rl.EnableEventWaiting()
-				rl.SetTargetFPS(30)
+			render_rect_dst := rl.Rectangle {
+				0, 
+				Menu_Height,
+				f32(game.width * TW) * game.camera.zoom,
+				-f32(game.height * TH) * game.camera.zoom,
+			}
+			rl.DrawTexturePro(game.render_texture.texture, render_rect_src, render_rect_dst, 0, 0, rl.WHITE)
+
+			if !game.hide_win_message {
+				rl.BeginMode2D(game.camera)
+				win_graphic_offset := max(500 - game.win_timer * 300, 0)
+
+				x: i32 = i32(f32(game.width) * TW / 2.0 - f32(nice_texture.width) / 2.0 + win_graphic_offset)
+				y: i32 = (game.height * TH / 2) - nice_texture.height / 2
+				if game.moves <= game.target_moves {
+					y -= perfect_texture.height / 2
+					rl.DrawTexture(perfect_texture, x, y + nice_texture.height + 8, rl.WHITE)
+				}
+				rl.DrawTexture(nice_texture, x, y, rl.WHITE)
+				if !game.win_graphic_complete && win_graphic_offset == 0 {
+					game.win_graphic_complete = true
+					when EVENT_WAITING do rl.EnableEventWaiting()
+					rl.SetTargetFPS(30)
+				}
+			}
+			if game.difficulty == .Expert {
+				game.render_texture_pos += {2, 0.5} 
 			}
 		}
 
@@ -572,3 +603,4 @@ main :: proc() {
 
 	}
 }
+
