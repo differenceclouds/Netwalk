@@ -230,17 +230,6 @@ scramble_tile :: proc(connection: Connection) -> (Connection, i32) {
 	return new_connection, difference
 }
 
-// must start with completed puzzle
-scramble_puzzle :: proc(game: ^Game) {
-	moves_total: i32
-	for &tile in game.tiles {
-		if tile.connection == {} do continue
-		moves: i32
-		tile.connection, moves = scramble_tile(tile.connection)
-		moves_total += moves
-	}
-	game.target_moves = moves_total
-}
 
 rotate_tile :: proc(game: ^Game, coord: Coord, step: int) {
 	idx := coord.y * game.width + coord.x
