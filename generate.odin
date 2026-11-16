@@ -143,9 +143,6 @@ get_adjacent_coord :: proc(dir: Cardinal, coord: Coord, size: Coord) -> (Coord, 
 	}
 	return coord, adjacent_cardinal
 }
-<<<<<<< Updated upstream
-=======
-
 
 // must start with completed puzzle
 scramble_puzzle :: proc(game: ^Game) {
@@ -158,4 +155,3 @@ scramble_puzzle :: proc(game: ^Game) {
 	}
 	game.target_moves = moves_total
 }
->>>>>>> Stashed changes
